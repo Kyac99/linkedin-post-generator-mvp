@@ -52,3 +52,119 @@
   margin-bottom: 1rem;
   transition: border-color 0.3s ease;
 }
+
+.input-field:focus {
+  outline: none;
+  border-color: #0077b5;
+  box-shadow: 0 0 0 3px rgba(0, 119, 181, 0.2);
+}
+
+.error-message {
+  color: #721c24;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 0.4rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.generate-button {
+  width: 100%;
+  padding: 1rem;
+  background-color: #0077b5;
+  color: white;
+  border: none;
+  border-radius: 0.4rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-bottom: 1.5rem;
+}
+
+.generate-button:hover {
+  background-color: #005e93;
+}
+
+.generate-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.tips {
+  background-color: #e8f4f8;
+  border-radius: 0.4rem;
+  padding: 1rem 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.tips h3 {
+  color: #0077b5;
+  font-size: 1.1rem;
+  margin-bottom: 0.8rem;
+}
+
+.tips ul {
+  padding-left: 1.5rem;
+  margin: 0;
+}
+
+.tips li {
+  margin-bottom: 0.5rem;
+  color: #444;
+  font-size: 0.9rem;
+}
+
+.tips li:last-child {
+  margin-bottom: 0;
+}
+
+/* Transcription toggle */
+.transcription-toggle {
+  margin-bottom: 1rem;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.toggle-label input {
+  margin-right: 0.5rem;
+}
+
+/* Code input specific styles */
+.code-input {
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  tab-size: 4;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .input-type-selector button {
+    padding: 0.6rem;
+    font-size: 0.8rem;
+  }
+  
+  .input-field,
+  .generate-button {
+    padding: 0.8rem;
+    font-size: 0.9rem;
+  }
+  
+  .tips {
+    padding: 1rem;
+  }
+  
+  .tips h3 {
+    font-size: 1rem;
+  }
+  
+  .tips li {
+    font-size: 0.85rem;
+  }
+}
