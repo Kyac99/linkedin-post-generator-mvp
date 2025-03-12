@@ -25,7 +25,7 @@ const ArticleToPost = ({ onPostGenerated, setIsGenerating }) => {
         headers: {
           'Content-Type': 'application/json',
           'aiApiKey': localStorage.getItem('aiApiKey'),
-          'aiApiType': localStorage.getItem('aiApiType') || 'claude'
+          'aiApiType': localStorage.getItem('aiApiType') || 'claude',
         },
         body: JSON.stringify({
           article: articleInput,
@@ -56,12 +56,14 @@ const ArticleToPost = ({ onPostGenerated, setIsGenerating }) => {
         <button 
           className={inputType === 'text' ? 'active' : ''} 
           onClick={() => setInputType('text')}
+          type="button"
         >
           Texte de l'article
         </button>
         <button 
           className={inputType === 'url' ? 'active' : ''} 
           onClick={() => setInputType('url')}
+          type="button"
         >
           URL de l'article
         </button>
