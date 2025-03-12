@@ -1,0 +1,54 @@
+/* frontend/src/components/generators/GeneratorStyles.css */
+.generator-container {
+  width: 100%;
+}
+
+.generator-container h2 {
+  color: #0077b5;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+}
+
+.input-type-selector {
+  display: flex;
+  margin-bottom: 1.5rem;
+}
+
+.input-type-selector button {
+  flex: 1;
+  padding: 0.8rem;
+  background-color: #f3f3f3;
+  border: 1px solid #ddd;
+  color: #555;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.input-type-selector button:first-child {
+  border-radius: 0.4rem 0 0 0.4rem;
+  border-right: none;
+}
+
+.input-type-selector button:last-child {
+  border-radius: 0 0.4rem 0.4rem 0;
+  border-left: none;
+}
+
+.input-type-selector button.active {
+  background-color: #0077b5;
+  color: white;
+  font-weight: 600;
+}
+
+.input-field {
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 0.4rem;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+  margin-bottom: 1rem;
+  transition: border-color 0.3s ease;
+}
