@@ -1,0 +1,166 @@
+/* frontend/src/components/PostPreview.css */
+.post-preview {
+  background-color: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.preview-mode {
+  position: relative;
+}
+
+.preview-content {
+  padding: 1.5rem;
+  font-size: 1rem;
+  line-height: 1.6;
+  max-height: 500px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.preview-content .hashtag {
+  color: #0077b5;
+  font-weight: 600;
+}
+
+.preview-content .mention {
+  color: #0077b5;
+  font-weight: 600;
+}
+
+.edit-mode {
+  padding: 1rem;
+}
+
+.edit-textarea {
+  width: 100%;
+  min-height: 300px;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 0.3rem;
+  font-size: 1rem;
+  line-height: 1.6;
+  resize: vertical;
+  font-family: inherit;
+}
+
+.edit-textarea:focus {
+  outline: none;
+  border-color: #0077b5;
+  box-shadow: 0 0 0 2px rgba(0, 119, 181, 0.2);
+}
+
+.edit-buttons {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+  gap: 1rem;
+}
+
+.save-button,
+.cancel-button,
+.edit-button {
+  padding: 0.6rem 1.2rem;
+  border-radius: 0.3rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.save-button {
+  background-color: #0077b5;
+  color: white;
+  border: none;
+}
+
+.save-button:hover {
+  background-color: #005e93;
+}
+
+.cancel-button {
+  background-color: white;
+  color: #555;
+  border: 1px solid #ddd;
+}
+
+.cancel-button:hover {
+  background-color: #f5f5f5;
+}
+
+.edit-button {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background-color: white;
+  color: #0077b5;
+  border: 1px solid #0077b5;
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+}
+
+.edit-button:hover {
+  background-color: #f0f7fb;
+}
+
+.preview-info {
+  border-top: 1px solid #eee;
+  padding: 1rem;
+  background-color: #f9f9f9;
+}
+
+.character-count {
+  font-size: 0.9rem;
+  color: #666;
+  margin: 0;
+  text-align: right;
+}
+
+.character-count .warning {
+  color: #e74c3c;
+  font-weight: 600;
+}
+
+/* Simulation de post LinkedIn */
+.preview-content p {
+  margin-bottom: 1rem;
+}
+
+.preview-content br {
+  content: "";
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .preview-content,
+  .edit-textarea {
+    padding: 1rem;
+    font-size: 0.9rem;
+  }
+  
+  .edit-button {
+    top: 0.75rem;
+    right: 0.75rem;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.75rem;
+  }
+  
+  .save-button,
+  .cancel-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+  
+  .preview-info {
+    padding: 0.75rem;
+  }
+  
+  .character-count {
+    font-size: 0.8rem;
+  }
+}
