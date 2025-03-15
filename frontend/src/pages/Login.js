@@ -19,7 +19,7 @@ const Login = ({ setIsAuthenticated }) => {
         if (response.ok) {
           setLinkedInAuthUrl(data.authUrl);
         } else {
-          setError('Erreur lors de la récupération de l'URL d\'authentification LinkedIn');
+          setError('Erreur lors de la récupération de l\'URL d\'authentification LinkedIn');
         }
       } catch (error) {
         console.error('LinkedIn auth URL error:', error);
