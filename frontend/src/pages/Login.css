@@ -1,0 +1,202 @@
+/* frontend/src/pages/Login.css */
+.login-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.login-container h1 {
+  color: #0077b5;
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 2rem;
+}
+
+.error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 1rem;
+  border-radius: 0.4rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.auth-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.auth-section {
+  background-color: #f9f9f9;
+  padding: 1.5rem;
+  border-radius: 0.4rem;
+  border: 1px solid #eee;
+}
+
+.auth-section h2 {
+  color: #0077b5;
+  font-size: 1.4rem;
+  margin-bottom: 1rem;
+}
+
+.auth-section p {
+  margin-bottom: 1.5rem;
+  color: #555;
+}
+
+.success-message {
+  background-color: #d4edda;
+  color: #155724;
+  padding: 1rem;
+  border-radius: 0.4rem;
+  text-align: center;
+  font-weight: 600;
+}
+
+.linkedin-button {
+  display: block;
+  width: 100%;
+  padding: 1rem;
+  background-color: #0077b5;
+  color: white;
+  text-align: center;
+  border-radius: 0.4rem;
+  text-decoration: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.linkedin-button:hover {
+  background-color: #005e93;
+  text-decoration: none;
+}
+
+.linkedin-button[disabled] {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.api-type-selector {
+  display: flex;
+  margin-bottom: 1rem;
+}
+
+.api-type-selector button {
+  flex: 1;
+  padding: 0.8rem;
+  background-color: #f3f3f3;
+  border: 1px solid #ddd;
+  color: #555;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.api-type-selector button:first-child {
+  border-radius: 0.4rem 0 0 0.4rem;
+  border-right: none;
+}
+
+.api-type-selector button:last-child {
+  border-radius: 0 0.4rem 0.4rem 0;
+  border-left: none;
+}
+
+.api-type-selector button.active {
+  background-color: #0077b5;
+  color: white;
+  font-weight: 600;
+}
+
+.auth-section input {
+  width: 100%;
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 0.4rem;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+.auth-section input:focus {
+  outline: none;
+  border-color: #0077b5;
+  box-shadow: 0 0 0 3px rgba(0, 119, 181, 0.2);
+}
+
+.submit-button {
+  width: 100%;
+  padding: 1rem;
+  background-color: #0077b5;
+  color: white;
+  border: none;
+  border-radius: 0.4rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.submit-button:hover {
+  background-color: #005e93;
+}
+
+.submit-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.start-app {
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.start-app p {
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  color: #155724;
+}
+
+.start-button {
+  padding: 1rem 2rem;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 0.4rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.start-button:hover {
+  background-color: #218838;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .login-container {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+  
+  .auth-section {
+    padding: 1.2rem;
+  }
+  
+  .auth-section h2 {
+    font-size: 1.2rem;
+  }
+  
+  .linkedin-button,
+  .submit-button,
+  .start-button,
+  .auth-section input {
+    padding: 0.8rem;
+    font-size: 0.9rem;
+  }
+}
