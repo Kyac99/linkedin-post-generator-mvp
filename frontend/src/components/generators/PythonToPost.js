@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import './GeneratorStyles.css';
 
-const PythonToPost = ({ onPostGenerated, setIsGenerating }) => {
+const PythonToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
   const [pythonCode, setPythonCode] = useState('');
   const [error, setError] = useState('');
 
@@ -26,7 +26,10 @@ const PythonToPost = ({ onPostGenerated, setIsGenerating }) => {
           'aiApiKey': localStorage.getItem('aiApiKey'),
           'aiApiType': localStorage.getItem('aiApiType') || 'claude',
         },
-        body: JSON.stringify({ pythonCode }),
+        body: JSON.stringify({ 
+          pythonCode,
+          tone: selectedTone
+        }),
       });
 
       const data = await response.json();
@@ -61,7 +64,7 @@ const PythonToPost = ({ onPostGenerated, setIsGenerating }) => {
         {error && <p className="error-message">{error}</p>}
         
         <button type="submit" className="generate-button">
-          Générer un post LinkedIn
+          Générer un post {selectedTone && `(Ton: ${selectedTone})`}
         </button>
       </form>
       
@@ -70,8 +73,9 @@ const PythonToPost = ({ onPostGenerated, setIsGenerating }) => {
         <ul>
           <li>Assurez-vous que votre code est bien indenté et commenté pour de meilleurs résultats.</li>
           <li>Pour du code long, il est préférable de sélectionner une section spécifique et intéressante.</li>
-          <li>Incluez une introduction ou description de ce que fait le code pour un contexte plus riche.</li>
-          <li>Le post généré expliquera le code de manière accessible pour vos connexions LinkedIn.</li>
+          <li>Le ton {selectedTone} sera utilisé pour adapter la présentation technique du code.</li>
+          <li>Vous pourrez toujours modifier le post généré avant de le publier.</li>
+          <li>Les posts techniques avec un ton {selectedTone === 'informatif' ? 'informatif' : 'professionnel'} tendent à mieux performer.</li>
         </ul>
       </div>
     </div>
