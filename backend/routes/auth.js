@@ -2,6 +2,48 @@
 const express = require('express');
 const router = express.Router();
 const AIService = require('../services/AIService');
+const LinkedInService = require('../services/LinkedInService');
+
+// Initialiser le service LinkedIn
+const linkedInService = new LinkedInService();
+
+// Obtenir l'URL d'authentification LinkedIn
+router.get('/linkedin/url', (req, res) => {
+  try {
+    const authUrl = linkedInService.getAuthUrl();
+    res.json({ authUrl });
+  } catch (error) {
+    console.error('Erreur URL auth LinkedIn:', error);
+    res.status(500).json({ message: 'Erreur lors de la génération de l\'URL d\'authentification LinkedIn' });
+  }
+});
+
+// Callback pour l'authentification LinkedIn
+router.post('/linkedin/callback', async (req, res) => {
+  try {
+    const { code } = req.body;
+    
+    if (!code) {
+      return res.status(400).json({ message: 'Code d\'autorisation manquant' });
+    }
+    
+    const tokenData = await linkedInService.getAccessToken(code);
+    
+    // Vérifier que nous avons bien reçu un token
+    if (!tokenData.access_token) {
+      throw new Error('Token d\'accès manquant dans la réponse');
+    }
+    
+    res.json({ 
+      accessToken: tokenData.access_token,
+      expiresIn: tokenData.expires_in,
+      refreshToken: tokenData.refresh_token || null
+    });
+  } catch (error) {
+    console.error('Erreur callback LinkedIn:', error);
+    res.status(500).json({ message: 'Erreur lors de l\'authentification LinkedIn' });
+  }
+});
 
 // Vérifier la validité d'une clé API IA (Claude/OpenAI)
 router.post('/verify-ai-key', async (req, res) => {
@@ -77,7 +119,8 @@ router.get('/check-session', (req, res) => {
     // Dans une version complète, on vérifierait la validité des tokens stockés en base de données
     res.json({
       serverStatus: 'online',
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      env: process.env.NODE_ENV || 'development'
     });
   } catch (error) {
     console.error('Erreur vérification session:', error);
