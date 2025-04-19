@@ -19,7 +19,8 @@ class LinkedInService {
    * Génère l'URL d'authentification LinkedIn
    */
   getAuthUrl() {
-    const scopes = ['r_emailaddress', 'r_liteprofile', 'w_member_social'];
+    // Mise à jour des scopes selon la nouvelle nomenclature de LinkedIn
+    const scopes = ['openid', 'profile', 'email', 'w_member_social'];
     const state = this.generateRandomState();
     
     console.log("Génération de l'URL d'authentification LinkedIn avec:");
