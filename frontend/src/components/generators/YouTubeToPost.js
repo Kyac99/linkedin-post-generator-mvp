@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import './GeneratorStyles.css';
 
-const YouTubeToPost = ({ onPostGenerated, setIsGenerating }) => {
+const YouTubeToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
   const [videoUrl, setVideoUrl] = useState('');
   const [transcription, setTranscription] = useState('');
   const [includeTranscription, setIncludeTranscription] = useState(false);
@@ -41,7 +41,8 @@ const YouTubeToPost = ({ onPostGenerated, setIsGenerating }) => {
         },
         body: JSON.stringify({
           videoUrl,
-          transcription: includeTranscription ? transcription : null
+          transcription: includeTranscription ? transcription : null,
+          tone: selectedTone
         }),
       });
 
@@ -97,7 +98,7 @@ const YouTubeToPost = ({ onPostGenerated, setIsGenerating }) => {
         {error && <p className="error-message">{error}</p>}
         
         <button type="submit" className="generate-button">
-          Générer un post LinkedIn
+          Générer un post {selectedTone && `(Ton: ${selectedTone})`}
         </button>
       </form>
       
@@ -107,6 +108,7 @@ const YouTubeToPost = ({ onPostGenerated, setIsGenerating }) => {
           <li>Pour de meilleurs résultats, utilisez des vidéos avec un contenu clair et pertinent.</li>
           <li>Fournir une transcription peut améliorer significativement la qualité du post généré.</li>
           <li>Les vidéos courtes ou moyennes (moins de 15 minutes) donnent généralement de meilleurs résultats.</li>
+          <li>Le post sera généré avec le ton {selectedTone} que vous avez sélectionné.</li>
           <li>Le post inclura automatiquement le lien vers la vidéo YouTube.</li>
         </ul>
       </div>
