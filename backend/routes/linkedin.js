@@ -8,15 +8,48 @@ const linkedInService = new LinkedInService();
 
 // Middleware pour vérifier le token LinkedIn
 const validateLinkedInToken = (req, res, next) => {
-  const { linkedinToken } = req.headers;
+  const { linkedintoken } = req.headers;
   
-  if (!linkedinToken) {
+  if (!linkedintoken) {
     return res.status(401).json({ message: 'Token LinkedIn manquant' });
   }
   
-  req.linkedinToken = linkedinToken;
+  req.linkedinToken = linkedintoken;
   next();
 };
+
+// Route pour obtenir l'URL d'authentification LinkedIn
+router.get('/auth-url', (req, res) => {
+  try {
+    const authUrl = linkedInService.getAuthUrl();
+    res.json({ authUrl });
+  } catch (error) {
+    console.error('Erreur génération URL d\'authentification:', error);
+    res.status(500).json({ message: `Erreur: ${error.message}` });
+  }
+});
+
+// Route pour échanger le code d'autorisation contre un token
+router.post('/exchange-code', async (req, res) => {
+  try {
+    const { code } = req.body;
+    
+    if (!code) {
+      return res.status(400).json({ message: 'Code d\'autorisation manquant' });
+    }
+    
+    const tokenData = await linkedInService.getAccessToken(code);
+    
+    res.json({
+      accessToken: tokenData.access_token,
+      expiresIn: tokenData.expires_in,
+      refreshToken: tokenData.refresh_token || null
+    });
+  } catch (error) {
+    console.error('Erreur échange code d\'autorisation:', error);
+    res.status(500).json({ message: `Erreur: ${error.message}` });
+  }
+});
 
 // Publier un post sur LinkedIn
 router.post('/publish', validateLinkedInToken, async (req, res) => {
@@ -40,11 +73,57 @@ router.post('/publish', validateLinkedInToken, async (req, res) => {
     res.json({
       success: true,
       message: 'Post publié avec succès',
-      postId: result.id
+      postData: result
     });
   } catch (error) {
     console.error('Erreur publication LinkedIn:', error);
-    res.status(500).json({ message: `Erreur: ${error.message}` });
+    res.status(500).json({ 
+      message: `Erreur: ${error.message}`,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+// Publier un post avec un lien sur LinkedIn
+router.post('/publish-with-link', validateLinkedInToken, async (req, res) => {
+  try {
+    const { content, linkUrl, linkTitle, linkDescription } = req.body;
+    
+    if (!content) {
+      return res.status(400).json({ message: 'Contenu du post manquant' });
+    }
+    
+    if (!linkUrl) {
+      return res.status(400).json({ message: 'URL du lien manquant' });
+    }
+    
+    // Vérifier d'abord si le token est valide
+    const isTokenValid = await linkedInService.verifyAccessToken(req.linkedinToken);
+    
+    if (!isTokenValid) {
+      return res.status(401).json({ message: 'Token LinkedIn invalide ou expiré' });
+    }
+    
+    // Publier le post avec lien
+    const result = await linkedInService.publishPostWithLink(
+      req.linkedinToken, 
+      content, 
+      linkUrl, 
+      linkTitle, 
+      linkDescription
+    );
+    
+    res.json({
+      success: true,
+      message: 'Post avec lien publié avec succès',
+      postData: result
+    });
+  } catch (error) {
+    console.error('Erreur publication LinkedIn avec lien:', error);
+    res.status(500).json({ 
+      message: `Erreur: ${error.message}`,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
@@ -54,7 +133,18 @@ router.get('/profile', validateLinkedInToken, async (req, res) => {
     // Récupérer les informations du profil
     const profile = await linkedInService.getUserProfile(req.linkedinToken);
     
-    res.json({ profile });
+    // Essayer de récupérer l'email si possible
+    let email = null;
+    try {
+      email = await linkedInService.getUserEmail(req.linkedinToken);
+    } catch (emailError) {
+      console.warn('Impossible de récupérer l\'email:', emailError.message);
+    }
+    
+    res.json({ 
+      profile,
+      email
+    });
   } catch (error) {
     console.error('Erreur récupération profil LinkedIn:', error);
     res.status(500).json({ message: `Erreur: ${error.message}` });
@@ -73,6 +163,28 @@ router.get('/verify-token', validateLinkedInToken, async (req, res) => {
     }
   } catch (error) {
     console.error('Erreur vérification token LinkedIn:', error);
+    res.status(500).json({ message: `Erreur: ${error.message}` });
+  }
+});
+
+// Rafraîchir un token d'accès expiré
+router.post('/refresh-token', async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+    
+    if (!refreshToken) {
+      return res.status(400).json({ message: 'Refresh token manquant' });
+    }
+    
+    const tokenData = await linkedInService.refreshAccessToken(refreshToken);
+    
+    res.json({
+      accessToken: tokenData.access_token,
+      expiresIn: tokenData.expires_in,
+      refreshToken: tokenData.refresh_token || refreshToken
+    });
+  } catch (error) {
+    console.error('Erreur rafraîchissement token:', error);
     res.status(500).json({ message: `Erreur: ${error.message}` });
   }
 });
