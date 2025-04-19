@@ -1,5 +1,5 @@
 // frontend/src/pages/Dashboard.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ArticleToPost from '../components/generators/ArticleToPost';
 import IdeaToPost from '../components/generators/IdeaToPost';
 import YouTubeToPost from '../components/generators/YouTubeToPost';
@@ -13,6 +13,37 @@ const Dashboard = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isPosting, setIsPosting] = useState(false);
   const [notification, setNotification] = useState({ show: false, type: '', message: '' });
+  const [selectedTone, setSelectedTone] = useState('professionnel');
+  const [includeLink, setIncludeLink] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkTitle, setLinkTitle] = useState('');
+  const [linkDescription, setLinkDescription] = useState('');
+  const [userProfile, setUserProfile] = useState(null);
+
+  // Récupérer le profil utilisateur au chargement
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const token = localStorage.getItem('linkedInToken');
+        if (!token) return;
+
+        const response = await fetch('/api/linkedin/profile', {
+          headers: {
+            'linkedintoken': token
+          }
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setUserProfile(data.profile);
+        }
+      } catch (error) {
+        console.error("Erreur lors de la récupération du profil:", error);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
 
   const handlePostGenerated = (postContent) => {
     setGeneratedPost(postContent);
@@ -37,17 +68,32 @@ const Dashboard = () => {
       return;
     }
 
+    if (includeLink && !linkUrl) {
+      setNotification({ 
+        show: true, 
+        type: 'error', 
+        message: 'Veuillez saisir une URL pour le lien!' 
+      });
+      return;
+    }
+
     setIsPosting(true);
     
     try {
+      // Déterminer l'endpoint en fonction de l'inclusion d'un lien
+      const endpoint = includeLink ? '/api/linkedin/publish-with-link' : '/api/linkedin/publish';
+      const body = includeLink 
+        ? { content: generatedPost, linkUrl, linkTitle, linkDescription }
+        : { content: generatedPost };
+      
       // Appel à l'API pour publier sur LinkedIn
-      const response = await fetch('/api/linkedin/publish', {
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'linkedinToken': localStorage.getItem('linkedInToken')
+          'linkedintoken': localStorage.getItem('linkedInToken')
         },
-        body: JSON.stringify({ content: generatedPost }),
+        body: JSON.stringify(body),
       });
 
       const data = await response.json();
@@ -59,6 +105,10 @@ const Dashboard = () => {
           message: 'Post publié avec succès sur LinkedIn!' 
         });
         setGeneratedPost('');
+        setIncludeLink(false);
+        setLinkUrl('');
+        setLinkTitle('');
+        setLinkDescription('');
       } else {
         throw new Error(data.message || 'Erreur lors de la publication');
       }
@@ -83,6 +133,7 @@ const Dashboard = () => {
     const commonProps = {
       onPostGenerated: handlePostGenerated,
       setIsGenerating,
+      selectedTone,
     };
 
     switch (activeTab) {
@@ -99,6 +150,16 @@ const Dashboard = () => {
     }
   };
 
+  const tones = [
+    { value: 'professionnel', label: 'Professionnel' },
+    { value: 'casual', label: 'Décontracté' },
+    { value: 'inspirant', label: 'Inspirant' },
+    { value: 'informatif', label: 'Informatif' },
+    { value: 'humoristique', label: 'Humoristique' },
+    { value: 'formel', label: 'Formel' },
+    { value: 'storytelling', label: 'Storytelling' }
+  ];
+
   return (
     <div className="dashboard">
       <h1>Générateur de Posts LinkedIn</h1>
@@ -108,6 +169,26 @@ const Dashboard = () => {
           {notification.message}
         </div>
       )}
+      
+      {userProfile && (
+        <div className="user-profile-banner">
+          <span>Connecté en tant que: {userProfile.localizedFirstName} {userProfile.localizedLastName}</span>
+        </div>
+      )}
+      
+      <div className="tone-selector">
+        <label htmlFor="tone-select">Ton du post:</label>
+        <select 
+          id="tone-select" 
+          value={selectedTone} 
+          onChange={(e) => setSelectedTone(e.target.value)}
+          disabled={isGenerating}
+        >
+          {tones.map(tone => (
+            <option key={tone.value} value={tone.value}>{tone.label}</option>
+          ))}
+        </select>
+      </div>
       
       <div className="tabs">
         <button 
@@ -143,7 +224,63 @@ const Dashboard = () => {
       {generatedPost && (
         <div className="preview-section">
           <h2>Aperçu du Post</h2>
-          <PostPreview content={generatedPost} />
+          <PostPreview 
+            content={generatedPost} 
+            setContent={setGeneratedPost}
+          />
+          
+          <div className="link-options">
+            <label className="include-link-checkbox">
+              <input
+                type="checkbox"
+                checked={includeLink}
+                onChange={(e) => setIncludeLink(e.target.checked)}
+                disabled={isPosting}
+              />
+              Inclure un lien dans le post
+            </label>
+            
+            {includeLink && (
+              <div className="link-fields">
+                <div className="form-group">
+                  <label htmlFor="link-url">URL du lien*</label>
+                  <input
+                    id="link-url"
+                    type="url"
+                    value={linkUrl}
+                    onChange={(e) => setLinkUrl(e.target.value)}
+                    placeholder="https://example.com/article"
+                    required
+                    disabled={isPosting}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="link-title">Titre du lien</label>
+                  <input
+                    id="link-title"
+                    type="text"
+                    value={linkTitle}
+                    onChange={(e) => setLinkTitle(e.target.value)}
+                    placeholder="Titre de votre lien (optionnel)"
+                    disabled={isPosting}
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="link-description">Description du lien</label>
+                  <textarea
+                    id="link-description"
+                    value={linkDescription}
+                    onChange={(e) => setLinkDescription(e.target.value)}
+                    placeholder="Brève description du lien (optionnel)"
+                    disabled={isPosting}
+                    rows={2}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
           
           <button 
             className="publish-button" 
