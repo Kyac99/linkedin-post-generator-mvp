@@ -5,6 +5,7 @@
   border-radius: 0.5rem;
   overflow: hidden;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  margin-bottom: 2rem;
 }
 
 .preview-mode {
@@ -17,7 +18,6 @@
   line-height: 1.6;
   max-height: 500px;
   overflow-y: auto;
-  white-space: pre-wrap;
   word-break: break-word;
 }
 
@@ -29,6 +29,12 @@
 .preview-content .mention {
   color: #0077b5;
   font-weight: 600;
+}
+
+.preview-content .url {
+  color: #0077b5;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .edit-mode {
@@ -115,24 +121,47 @@
 .character-count {
   font-size: 0.9rem;
   color: #666;
-  margin: 0;
-  text-align: right;
+  margin: 0.5rem 0;
 }
 
-.character-count .warning {
+.character-count.exceeded {
   color: #e74c3c;
   font-weight: 600;
+}
+
+.total-characters {
+  font-size: 0.85rem;
+  color: #777;
+  margin: 0.5rem 0;
+}
+
+.warning {
+  color: #e74c3c;
+  font-weight: 600;
+}
+
+.linkedin-limits-info {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background-color: #f0f7fb;
+  border-radius: 0.3rem;
+  border-left: 3px solid #0077b5;
+}
+
+.info-text {
+  font-size: 0.8rem;
+  color: #555;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.info-icon {
+  margin-right: 0.3rem;
 }
 
 /* Simulation de post LinkedIn */
 .preview-content p {
   margin-bottom: 1rem;
-}
-
-.preview-content br {
-  content: "";
-  display: block;
-  margin-bottom: 0.5rem;
 }
 
 /* Responsive adjustments */
@@ -160,7 +189,50 @@
     padding: 0.75rem;
   }
   
-  .character-count {
+  .character-count,
+  .total-characters {
     font-size: 0.8rem;
   }
+  
+  .linkedin-limits-info {
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+  }
+  
+  .info-text {
+    font-size: 0.75rem;
+  }
+}
+
+/* Animation pour l'apparition des notifications */
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translateY(-10px); }
+  10% { opacity: 1; transform: translateY(0); }
+  90% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-10px); }
+}
+
+.notification {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.3rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  animation: fadeInOut 3s forwards;
+}
+
+.notification.success {
+  background-color: #d4edda;
+  color: #155724;
+  border-left: 4px solid #28a745;
+}
+
+.notification.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border-left: 4px solid #dc3545;
 }
