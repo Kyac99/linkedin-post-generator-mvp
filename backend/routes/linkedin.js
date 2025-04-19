@@ -21,7 +21,13 @@ const validateLinkedInToken = (req, res, next) => {
 // Route pour obtenir l'URL d'authentification LinkedIn
 router.get('/auth-url', (req, res) => {
   try {
+    console.log("Génération de l'URL d'authentification LinkedIn...");
+    console.log("LINKEDIN_CLIENT_ID:", process.env.LINKEDIN_CLIENT_ID ? "Défini" : "Non défini");
+    console.log("LINKEDIN_REDIRECT_URI:", process.env.LINKEDIN_REDIRECT_URI);
+    
     const authUrl = linkedInService.getAuthUrl();
+    console.log("URL générée:", authUrl);
+    
     res.json({ authUrl });
   } catch (error) {
     console.error('Erreur génération URL d\'authentification:', error);
@@ -38,7 +44,12 @@ router.post('/exchange-code', async (req, res) => {
       return res.status(400).json({ message: 'Code d\'autorisation manquant' });
     }
     
+    console.log("Échange du code contre un token d'accès...");
+    console.log("Code reçu:", code.substring(0, 5) + "...");
+    
     const tokenData = await linkedInService.getAccessToken(code);
+    
+    console.log("Token obtenu avec succès");
     
     res.json({
       accessToken: tokenData.access_token,
