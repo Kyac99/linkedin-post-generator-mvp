@@ -1,5 +1,5 @@
 // frontend/src/pages/Login.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import './Login.css';
 
 const Login = ({ setIsAuthenticated }) => {
@@ -9,40 +9,13 @@ const Login = ({ setIsAuthenticated }) => {
   const [error, setError] = useState('');
   const [linkedInAuthUrl, setLinkedInAuthUrl] = useState('');
 
-  useEffect(() => {
-    // Récupérer l'URL d'authentification LinkedIn
-    const fetchLinkedInAuthUrl = async () => {
-      try {
-        const response = await fetch('/api/auth/linkedin/url');
-        const data = await response.json();
-        
-        if (response.ok) {
-          setLinkedInAuthUrl(data.authUrl);
-        } else {
-          setError('Erreur lors de la récupération de l\'URL d\'authentification LinkedIn');
-        }
-      } catch (error) {
-        console.error('LinkedIn auth URL error:', error);
-        setError('Erreur serveur. Veuillez réessayer plus tard.');
-      }
-    };
-
-    fetchLinkedInAuthUrl();
-
-    // Vérifier si on a un code d'autorisation dans l'URL (redirection après authentification LinkedIn)
-    const urlParams = new URLSearchParams(window.location.search);
-    const authCode = urlParams.get('code');
-    
-    if (authCode) {
-      handleLinkedInCallback(authCode);
-    }
-  }, []);
-
-  const handleLinkedInCallback = async (code) => {
+  // Définir handleLinkedInCallback avec useCallback pour pouvoir l'utiliser comme dépendance dans useEffect
+  const handleLinkedInCallback = useCallback(async (code) => {
     setLoading(true);
+    setError('');
     
     try {
-      const response = await fetch('/api/auth/linkedin/callback', {
+      const response = await fetch('/api/linkedin/exchange-code', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -71,7 +44,36 @@ const Login = ({ setIsAuthenticated }) => {
       // Nettoyer l'URL pour éviter les problèmes si l'utilisateur actualise la page
       window.history.replaceState({}, document.title, '/login');
     }
-  };
+  }, [setIsAuthenticated]); // Dépendances du useCallback
+
+  useEffect(() => {
+    // Récupérer l'URL d'authentification LinkedIn
+    const fetchLinkedInAuthUrl = async () => {
+      try {
+        const response = await fetch('/api/linkedin/auth-url');
+        const data = await response.json();
+        
+        if (response.ok) {
+          setLinkedInAuthUrl(data.authUrl);
+        } else {
+          setError('Erreur lors de la récupération de l\'URL d\'authentification LinkedIn');
+        }
+      } catch (error) {
+        console.error('LinkedIn auth URL error:', error);
+        setError('Erreur serveur. Veuillez réessayer plus tard.');
+      }
+    };
+
+    fetchLinkedInAuthUrl();
+
+    // Vérifier si on a un code d'autorisation dans l'URL (redirection après authentification LinkedIn)
+    const urlParams = new URLSearchParams(window.location.search);
+    const authCode = urlParams.get('code');
+    
+    if (authCode) {
+      handleLinkedInCallback(authCode);
+    }
+  }, [handleLinkedInCallback]); // Ajout de la dépendance manquante
 
   const handleAiApiSubmit = async (e) => {
     e.preventDefault();
