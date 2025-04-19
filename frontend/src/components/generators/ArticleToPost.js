@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import './GeneratorStyles.css';
 
-const ArticleToPost = ({ onPostGenerated, setIsGenerating }) => {
+const ArticleToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
   const [articleInput, setArticleInput] = useState('');
   const [inputType, setInputType] = useState('text'); // 'text' ou 'url'
   const [error, setError] = useState('');
@@ -30,6 +30,7 @@ const ArticleToPost = ({ onPostGenerated, setIsGenerating }) => {
         body: JSON.stringify({
           article: articleInput,
           inputType: inputType,
+          tone: selectedTone
         }),
       });
 
@@ -91,7 +92,7 @@ const ArticleToPost = ({ onPostGenerated, setIsGenerating }) => {
         {error && <p className="error-message">{error}</p>}
         
         <button type="submit" className="generate-button">
-          Générer un post LinkedIn
+          Générer un post {selectedTone && `(Ton: ${selectedTone})`}
         </button>
       </form>
       
@@ -101,6 +102,7 @@ const ArticleToPost = ({ onPostGenerated, setIsGenerating }) => {
           <li>Pour de meilleurs résultats, utilisez des articles complets et pertinents.</li>
           <li>Le post généré mettra en avant les points clés de l'article.</li>
           <li>Vous pourrez modifier le post avant de le publier.</li>
+          <li>Le ton sélectionné influence le style d'écriture du post.</li>
         </ul>
       </div>
     </div>
