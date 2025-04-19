@@ -45,20 +45,42 @@ router.post('/exchange-code', async (req, res) => {
     }
     
     console.log("Échange du code contre un token d'accès...");
-    console.log("Code reçu:", code.substring(0, 5) + "...");
+    console.log("Code reçu:", code.substring(0, 10) + "...");
+    console.log("LINKEDIN_REDIRECT_URI:", process.env.LINKEDIN_REDIRECT_URI);
     
-    const tokenData = await linkedInService.getAccessToken(code);
-    
-    console.log("Token obtenu avec succès");
-    
-    res.json({
-      accessToken: tokenData.access_token,
-      expiresIn: tokenData.expires_in,
-      refreshToken: tokenData.refresh_token || null
-    });
+    try {
+      const tokenData = await linkedInService.getAccessToken(code);
+      
+      console.log("Token obtenu avec succès");
+      
+      res.json({
+        accessToken: tokenData.access_token,
+        expiresIn: tokenData.expires_in,
+        refreshToken: tokenData.refresh_token || null,
+        success: true
+      });
+    } catch (tokenError) {
+      console.error('Erreur lors de l\'échange du code:', tokenError);
+      
+      if (tokenError.response) {
+        console.error('Détails de la réponse:', JSON.stringify({
+          status: tokenError.response.status,
+          data: tokenError.response.data
+        }, null, 2));
+      }
+      
+      res.status(500).json({ 
+        message: `Erreur lors de l'échange du code: ${tokenError.message}`,
+        details: process.env.NODE_ENV === 'development' ? tokenError.stack : undefined,
+        success: false
+      });
+    }
   } catch (error) {
     console.error('Erreur échange code d\'autorisation:', error);
-    res.status(500).json({ message: `Erreur: ${error.message}` });
+    res.status(500).json({ 
+      message: `Erreur: ${error.message}`,
+      success: false
+    });
   }
 });
 
