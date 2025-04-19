@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import './GeneratorStyles.css';
 
-const IdeaToPost = ({ onPostGenerated, setIsGenerating }) => {
+const IdeaToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
   const [idea, setIdea] = useState('');
   const [error, setError] = useState('');
 
@@ -26,7 +26,10 @@ const IdeaToPost = ({ onPostGenerated, setIsGenerating }) => {
           'aiApiKey': localStorage.getItem('aiApiKey'),
           'aiApiType': localStorage.getItem('aiApiType') || 'claude',
         },
-        body: JSON.stringify({ idea }),
+        body: JSON.stringify({ 
+          idea,
+          tone: selectedTone
+        }),
       });
 
       const data = await response.json();
@@ -60,7 +63,7 @@ const IdeaToPost = ({ onPostGenerated, setIsGenerating }) => {
         {error && <p className="error-message">{error}</p>}
         
         <button type="submit" className="generate-button">
-          Générer un post LinkedIn
+          Générer un post {selectedTone && `(Ton: ${selectedTone})`}
         </button>
       </form>
       
@@ -69,8 +72,8 @@ const IdeaToPost = ({ onPostGenerated, setIsGenerating }) => {
         <ul>
           <li>Soyez précis sur le sujet que vous souhaitez aborder.</li>
           <li>Incluez les points clés ou messages que vous voulez communiquer.</li>
-          <li>Mentionnez le ton souhaité (professionnel, inspirant, éducatif, etc.).</li>
-          <li>Indiquez votre audience cible pour un contenu plus pertinent.</li>
+          <li>L'IA adaptera automatiquement le ton selon votre sélection (professionnel, décontracté, etc.).</li>
+          <li>Vous pourrez modifier le post généré avant de le publier.</li>
         </ul>
       </div>
     </div>
