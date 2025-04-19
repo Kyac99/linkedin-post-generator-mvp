@@ -1,6 +1,7 @@
 // backend/services/LinkedInService.js
 const axios = require('axios');
 const qs = require('querystring');
+const crypto = require('crypto');
 
 class LinkedInService {
   constructor() {
@@ -42,7 +43,7 @@ class LinkedInService {
    * Génère un état aléatoire pour la sécurité OAuth
    */
   generateRandomState() {
-    return Math.random().toString(36).substring(2, 15);
+    return crypto.randomBytes(16).toString('hex');
   }
 
   /**
@@ -52,7 +53,7 @@ class LinkedInService {
   async getAccessToken(authorizationCode) {
     try {
       console.log("Échange du code d'autorisation contre un token d'accès");
-      console.log(`- Code: ${authorizationCode.substring(0, 5)}...`);
+      console.log(`- Code: ${authorizationCode.substring(0, 10)}...`);
       console.log(`- Redirect URI: ${this.redirectUri}`);
       
       const requestBody = {
@@ -76,7 +77,8 @@ class LinkedInService {
         {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
-          }
+          },
+          timeout: 10000 // Timeout de 10 secondes
         }
       );
 
@@ -84,7 +86,7 @@ class LinkedInService {
         status: response.status,
         data: {
           ...response.data,
-          access_token: response.data.access_token ? response.data.access_token.substring(0, 5) + '...' : null
+          access_token: response.data.access_token ? response.data.access_token.substring(0, 10) + '...' : null
         }
       }, null, 2));
       
@@ -96,6 +98,7 @@ class LinkedInService {
         console.error('Détails de la réponse d\'erreur:');
         console.error(`- Status: ${error.response.status}`);
         console.error(`- Data:`, JSON.stringify(error.response.data, null, 2));
+        console.error(`- Headers:`, JSON.stringify(error.response.headers, null, 2));
       } else if (error.request) {
         console.error('Aucune réponse reçue:', error.request);
       } else {
