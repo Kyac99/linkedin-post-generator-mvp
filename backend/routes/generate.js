@@ -12,7 +12,7 @@ const validateAIKey = (req, res, next) => {
   }
   
   if (!['claude', 'openai'].includes(aiApiType)) {
-    req.aiApiType = 'claude'; // Valeur par défaut
+    req.aiApiType = process.env.DEFAULT_AI_PROVIDER || 'claude'; // Valeur par défaut
   } else {
     req.aiApiType = aiApiType;
   }
@@ -21,13 +21,28 @@ const validateAIKey = (req, res, next) => {
   next();
 };
 
+// Middleware de validation du ton
+const validateTone = (req, res, next) => {
+  const validTones = ['professionnel', 'casual', 'inspirant', 'informatif', 'humoristique', 'formel', 'storytelling'];
+  
+  if (req.body.tone && !validTones.includes(req.body.tone)) {
+    return res.status(400).json({ 
+      message: 'Ton non valide', 
+      validTones 
+    });
+  }
+  
+  next();
+};
+
 // Appliquer le middleware à toutes les routes
 router.use(validateAIKey);
+router.use(validateTone);
 
 // Route pour générer un post à partir d'un article
 router.post('/article-to-post', async (req, res) => {
   try {
-    const { article, inputType } = req.body;
+    const { article, inputType, tone = 'professionnel' } = req.body;
     
     if (!article) {
       return res.status(400).json({ message: 'Article manquant' });
@@ -37,37 +52,59 @@ router.post('/article-to-post', async (req, res) => {
       return res.status(400).json({ message: 'Type d\'input non valide' });
     }
     
-    const generatedPost = await req.aiService.generatePostFromArticle(article, inputType);
+    const generatedPost = await req.aiService.generatePostFromArticle(article, inputType, tone);
     
-    res.json({ generatedPost });
+    res.json({ 
+      generatedPost,
+      metadata: {
+        type: 'article',
+        tone,
+        apiType: req.aiApiType,
+        timestamp: new Date().toISOString()
+      }
+    });
   } catch (error) {
     console.error('Erreur génération de post depuis article:', error);
-    res.status(500).json({ message: `Erreur: ${error.message}` });
+    res.status(500).json({ 
+      message: `Erreur: ${error.message}`,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
 // Route pour générer un post à partir d'une idée
 router.post('/idea-to-post', async (req, res) => {
   try {
-    const { idea } = req.body;
+    const { idea, tone = 'professionnel' } = req.body;
     
     if (!idea) {
       return res.status(400).json({ message: 'Idée manquante' });
     }
     
-    const generatedPost = await req.aiService.generatePostFromIdea(idea);
+    const generatedPost = await req.aiService.generatePostFromIdea(idea, tone);
     
-    res.json({ generatedPost });
+    res.json({ 
+      generatedPost,
+      metadata: {
+        type: 'idea',
+        tone,
+        apiType: req.aiApiType,
+        timestamp: new Date().toISOString()
+      }
+    });
   } catch (error) {
     console.error('Erreur génération de post depuis idée:', error);
-    res.status(500).json({ message: `Erreur: ${error.message}` });
+    res.status(500).json({ 
+      message: `Erreur: ${error.message}`,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
 // Route pour générer un post à partir d'une vidéo YouTube
 router.post('/youtube-to-post', async (req, res) => {
   try {
-    const { videoUrl, transcription } = req.body;
+    const { videoUrl, transcription, tone = 'professionnel' } = req.body;
     
     if (!videoUrl) {
       return res.status(400).json({ message: 'URL de la vidéo manquante' });
@@ -79,30 +116,69 @@ router.post('/youtube-to-post', async (req, res) => {
       return res.status(400).json({ message: 'URL YouTube non valide' });
     }
     
-    const generatedPost = await req.aiService.generatePostFromYouTube(videoUrl, transcription);
+    const generatedPost = await req.aiService.generatePostFromYouTube(videoUrl, transcription, tone);
     
-    res.json({ generatedPost });
+    res.json({ 
+      generatedPost,
+      metadata: {
+        type: 'youtube',
+        videoUrl,
+        tone,
+        hasTranscription: !!transcription,
+        apiType: req.aiApiType,
+        timestamp: new Date().toISOString()
+      }
+    });
   } catch (error) {
     console.error('Erreur génération de post depuis YouTube:', error);
-    res.status(500).json({ message: `Erreur: ${error.message}` });
+    res.status(500).json({ 
+      message: `Erreur: ${error.message}`,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
 // Route pour générer un post à partir d'un code Python
 router.post('/python-to-post', async (req, res) => {
   try {
-    const { pythonCode } = req.body;
+    const { pythonCode, tone = 'professionnel' } = req.body;
     
     if (!pythonCode) {
       return res.status(400).json({ message: 'Code Python manquant' });
     }
     
-    const generatedPost = await req.aiService.generatePostFromPythonCode(pythonCode);
+    const generatedPost = await req.aiService.generatePostFromPythonCode(pythonCode, tone);
     
-    res.json({ generatedPost });
+    res.json({ 
+      generatedPost,
+      metadata: {
+        type: 'python',
+        codeLength: pythonCode.length,
+        tone,
+        apiType: req.aiApiType,
+        timestamp: new Date().toISOString()
+      }
+    });
   } catch (error) {
     console.error('Erreur génération de post depuis code Python:', error);
-    res.status(500).json({ message: `Erreur: ${error.message}` });
+    res.status(500).json({ 
+      message: `Erreur: ${error.message}`,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+// Route pour vérifier la validité d'une clé API
+router.post('/verify-key', async (req, res) => {
+  try {
+    const isValid = await req.aiService.verifyApiKey();
+    res.json({ isValid });
+  } catch (error) {
+    console.error('Erreur de vérification de clé API:', error);
+    res.status(500).json({ 
+      message: 'Erreur lors de la vérification de la clé API',
+      isValid: false
+    });
   }
 });
 
