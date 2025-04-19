@@ -44,6 +44,53 @@ h1 {
   }
 }
 
+.user-profile-banner {
+  background-color: #f0f7fb;
+  border-radius: 0.5rem;
+  padding: 0.8rem 1.5rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+  color: #333;
+  border-left: 4px solid #0077b5;
+}
+
+.tone-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+}
+
+.tone-selector label {
+  font-size: 1rem;
+  color: #555;
+  font-weight: 500;
+}
+
+.tone-selector select {
+  padding: 0.5rem 1rem;
+  border: 1px solid #ddd;
+  border-radius: 0.3rem;
+  font-size: 0.9rem;
+  background-color: white;
+  min-width: 180px;
+  cursor: pointer;
+}
+
+.tone-selector select:focus {
+  outline: none;
+  border-color: #0077b5;
+  box-shadow: 0 0 0 2px rgba(0, 119, 181, 0.2);
+}
+
+.tone-selector select:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
 .tabs {
   display: flex;
   justify-content: center;
@@ -103,6 +150,72 @@ h1 {
   margin-bottom: 1.5rem;
   text-align: center;
   font-size: 1.8rem;
+}
+
+.link-options {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background-color: #f9f9f9;
+  border-radius: 0.5rem;
+  border: 1px solid #e0e0e0;
+}
+
+.include-link-checkbox {
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+  color: #333;
+  margin-bottom: 1rem;
+  cursor: pointer;
+}
+
+.include-link-checkbox input[type="checkbox"] {
+  margin-right: 0.5rem;
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+.link-fields {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e0e0e0;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 0.4rem;
+}
+
+.form-group input,
+.form-group textarea {
+  padding: 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 0.3rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: border-color 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #0077b5;
+  box-shadow: 0 0 0 2px rgba(0, 119, 181, 0.2);
+}
+
+.form-group input:disabled,
+.form-group textarea:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
 }
 
 .publish-button {
@@ -171,5 +284,44 @@ h1 {
   .tab-content, 
   .preview-section {
     padding: 1.5rem;
+  }
+  
+  .tone-selector {
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .link-options {
+    padding: 1rem;
+  }
+  
+  .include-link-checkbox {
+    font-size: 0.9rem;
+  }
+  
+  .form-group input, 
+  .form-group textarea {
+    padding: 0.6rem;
+    font-size: 0.85rem;
+  }
+  
+  .publish-button {
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+  }
+}
+
+/* Tablette */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .link-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* Desktop */
+@media (min-width: 1025px) {
+  .link-fields {
+    grid-template-columns: 2fr 1.5fr 1.5fr;
   }
 }
