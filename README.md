@@ -15,13 +15,16 @@ Ce projet est un MVP (Minimum Viable Product) permettant de générer et publier
   - Vidéos YouTube
   - Code Python
 
-- **Aperçu et personnalisation**
+- **Personnalisation avancée**
+  - Sélection du ton (professionnel, casual, inspirant, etc.)
   - Visualisation du post généré avant publication
   - Édition du contenu généré
-  - Compteur de caractères
+  - Compteur de caractères avec alertes
+  - Ajout de liens optionnels avec titre et description
 
 - **Publication**
   - Publication directe sur LinkedIn
+  - Publication avec lien inclus
 
 ## Architecture technique
 
@@ -34,6 +37,7 @@ Ce projet est un MVP (Minimum Viable Product) permettant de générer et publier
   - Node.js avec Express pour l'API
   - Intégration avec LinkedIn API
   - Intégration avec Claude AI / OpenAI
+  - Support multi-modèle (Claude 3.5 Sonnet et GPT-4o)
 
 - **Sécurité**
   - Authentification OAuth pour LinkedIn
@@ -58,6 +62,9 @@ NODE_ENV=development
 LINKEDIN_CLIENT_ID=votre_client_id_linkedin
 LINKEDIN_CLIENT_SECRET=votre_client_secret_linkedin
 LINKEDIN_REDIRECT_URI=http://localhost:3000/login
+CLAUDE_API_KEY=votre_cle_api_claude
+OPENAI_API_KEY=votre_cle_api_openai
+DEFAULT_AI_PROVIDER=claude  # ou 'openai'
 ```
 
 ### Installation
@@ -81,6 +88,22 @@ LINKEDIN_REDIRECT_URI=http://localhost:3000/login
 
 5. Accéder à l'application via `http://localhost:3000`
 
+## Guide d'utilisation
+
+1. **Configuration initiale**
+   - Connectez-vous avec votre compte LinkedIn
+   - Configurez votre clé API (Claude ou OpenAI)
+
+2. **Génération de posts**
+   - Choisissez le type de contenu source (Article, Idée, YouTube, Python)
+   - Sélectionnez le ton souhaité pour votre post
+   - Entrez le contenu source et cliquez sur "Générer"
+
+3. **Personnalisation et publication**
+   - Modifiez le post généré si nécessaire
+   - Ajoutez éventuellement un lien avec titre et description
+   - Publiez directement sur votre profil LinkedIn
+
 ## Améliorations futures (post-MVP)
 
 - **Fonctionnalités**
@@ -89,12 +112,14 @@ LINKEDIN_REDIRECT_URI=http://localhost:3000/login
   - Historique des publications et analytics
   - Suggestions de hashtags populaires
   - Support de multiples comptes LinkedIn
+  - Prévisualisation du rendu mobile
 
 - **Technique**
   - Base de données pour stocker l'historique
   - Système de files d'attente pour les publications planifiées
   - Tests automatisés
   - CI/CD pour déploiement automatique
+  - Support de LinkedIn Company Pages
 
 ## Licence
 
