@@ -12,8 +12,9 @@ class AIService {
    * Génère un post LinkedIn à partir d'un article
    * @param {string} article - Texte ou URL de l'article
    * @param {string} inputType - Type d'input ('text' ou 'url')
+   * @param {string} tone - Ton souhaité pour le post (professionnel, casual, inspirant, etc.)
    */
-  async generatePostFromArticle(article, inputType) {
+  async generatePostFromArticle(article, inputType, tone = 'professionnel') {
     let articleContent = article;
     
     // Si c'est une URL, extraire le contenu de l'article
@@ -29,7 +30,7 @@ class AIService {
     const truncatedContent = this.truncateContent(articleContent, 10000);
     
     // Générer le prompt pour l'IA
-    const prompt = this.createPromptForArticle(truncatedContent);
+    const prompt = this.createPromptForArticle(truncatedContent, tone);
     
     // Appeler l'API d'IA appropriée
     return await this.callAIApi(prompt);
@@ -38,9 +39,10 @@ class AIService {
   /**
    * Génère un post LinkedIn à partir d'une idée
    * @param {string} idea - L'idée de post
+   * @param {string} tone - Ton souhaité pour le post
    */
-  async generatePostFromIdea(idea) {
-    const prompt = this.createPromptForIdea(idea);
+  async generatePostFromIdea(idea, tone = 'professionnel') {
+    const prompt = this.createPromptForIdea(idea, tone);
     return await this.callAIApi(prompt);
   }
 
@@ -48,8 +50,9 @@ class AIService {
    * Génère un post LinkedIn à partir d'une vidéo YouTube
    * @param {string} videoUrl - URL de la vidéo YouTube
    * @param {string} transcription - Transcription optionnelle de la vidéo
+   * @param {string} tone - Ton souhaité pour le post
    */
-  async generatePostFromYouTube(videoUrl, transcription = null) {
+  async generatePostFromYouTube(videoUrl, transcription = null, tone = 'professionnel') {
     let videoContent = '';
     
     if (transcription) {
@@ -72,16 +75,17 @@ class AIService {
       }
     }
     
-    const prompt = this.createPromptForYouTube(videoUrl, videoContent);
+    const prompt = this.createPromptForYouTube(videoUrl, videoContent, tone);
     return await this.callAIApi(prompt);
   }
 
   /**
    * Génère un post LinkedIn à partir d'un code Python
    * @param {string} pythonCode - Le code Python
+   * @param {string} tone - Ton souhaité pour le post
    */
-  async generatePostFromPythonCode(pythonCode) {
-    const prompt = this.createPromptForPythonCode(pythonCode);
+  async generatePostFromPythonCode(pythonCode, tone = 'professionnel') {
+    const prompt = this.createPromptForPythonCode(pythonCode, tone);
     return await this.callAIApi(prompt);
   }
 
@@ -198,8 +202,9 @@ class AIService {
   /**
    * Créer un prompt pour générer un post LinkedIn à partir d'un article
    * @param {string} articleContent - Le contenu de l'article
+   * @param {string} tone - Le ton souhaité pour le post
    */
-  createPromptForArticle(articleContent) {
+  createPromptForArticle(articleContent, tone) {
     return `
     Tu es un expert en marketing de contenu et en rédaction pour LinkedIn. Ta mission est de transformer l'article suivant en un post LinkedIn engageant et professionnel.
 
@@ -209,6 +214,7 @@ class AIService {
     - Utilise des paragraphes courts et des espaces pour une meilleure lisibilité
     - Inclus 3-5 hashtags pertinents à la fin
     - Termine par une question ou un appel à l'action pour encourager l'engagement
+    - Le ton du post doit être: ${tone}
 
     Voici l'article à transformer:
     ${articleContent}
@@ -220,8 +226,9 @@ class AIService {
   /**
    * Créer un prompt pour générer un post LinkedIn à partir d'une idée
    * @param {string} idea - L'idée de post
+   * @param {string} tone - Le ton souhaité pour le post
    */
-  createPromptForIdea(idea) {
+  createPromptForIdea(idea, tone) {
     return `
     Tu es un expert en marketing de contenu et en rédaction pour LinkedIn. Ta mission est de transformer l'idée suivante en un post LinkedIn complet, engageant et professionnel.
 
@@ -232,6 +239,7 @@ class AIService {
     - Utilise des paragraphes courts et des espaces pour une meilleure lisibilité
     - Inclus 3-5 hashtags pertinents à la fin
     - Termine par une question ou un appel à l'action pour encourager l'engagement
+    - Le ton du post doit être: ${tone}
 
     Voici l'idée à développer:
     ${idea}
@@ -244,8 +252,9 @@ class AIService {
    * Créer un prompt pour générer un post LinkedIn à partir d'une vidéo YouTube
    * @param {string} videoUrl - L'URL de la vidéo YouTube
    * @param {string} videoContent - Le contenu/métadonnées de la vidéo
+   * @param {string} tone - Le ton souhaité pour le post
    */
-  createPromptForYouTube(videoUrl, videoContent) {
+  createPromptForYouTube(videoUrl, videoContent, tone) {
     return `
     Tu es un expert en marketing de contenu et en rédaction pour LinkedIn. Ta mission est de créer un post LinkedIn engageant qui fait la promotion de la vidéo YouTube suivante.
 
@@ -258,6 +267,7 @@ class AIService {
     - Inclus l'URL de la vidéo: ${videoUrl}
     - Inclus 3-5 hashtags pertinents à la fin
     - Termine par une question ou un appel à l'action pour encourager l'engagement
+    - Le ton du post doit être: ${tone}
 
     Voici les informations sur la vidéo:
     ${videoContent}
@@ -269,8 +279,9 @@ class AIService {
   /**
    * Créer un prompt pour générer un post LinkedIn à partir d'un code Python
    * @param {string} pythonCode - Le code Python
+   * @param {string} tone - Le ton souhaité pour le post
    */
-  createPromptForPythonCode(pythonCode) {
+  createPromptForPythonCode(pythonCode, tone) {
     return `
     Tu es un expert en programmation Python et en marketing de contenu pour LinkedIn. Ta mission est de créer un post LinkedIn engageant qui explique le code Python suivant.
 
@@ -283,6 +294,7 @@ class AIService {
     - Utilise des paragraphes courts et des espaces pour une meilleure lisibilité
     - Inclus 3-5 hashtags pertinents à la fin (#Python, #Coding, etc.)
     - Termine par une question ou un appel à l'action pour encourager l'engagement
+    - Le ton du post doit être: ${tone}
 
     Voici le code Python à expliquer:
     ${pythonCode}
@@ -311,10 +323,11 @@ class AIService {
    */
   async callClaudeApi(prompt) {
     try {
+      // Utiliser le modèle Claude 3.5 Sonnet pour de meilleurs résultats
       const response = await axios.post(
         'https://api.anthropic.com/v1/messages',
         {
-          model: 'claude-3-haiku-20240307',
+          model: 'claude-3-5-sonnet-20240620',
           max_tokens: 1024,
           messages: [
             { role: 'user', content: prompt }
@@ -333,6 +346,36 @@ class AIService {
       return response.data.content[0].text;
     } catch (error) {
       console.error('Erreur lors de l\'appel à l\'API Claude:', error.response?.data || error.message);
+      
+      // Fallback sur un modèle plus léger si nécessaire
+      if (error.response?.status === 400 && error.response?.data?.error?.type === 'invalid_request_error') {
+        try {
+          console.log('Tentative avec Claude 3 Haiku...');
+          const fallbackResponse = await axios.post(
+            'https://api.anthropic.com/v1/messages',
+            {
+              model: 'claude-3-haiku-20240307',
+              max_tokens: 1024,
+              messages: [
+                { role: 'user', content: prompt }
+              ]
+            },
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': this.apiKey,
+                'anthropic-version': '2023-06-01'
+              }
+            }
+          );
+          
+          return fallbackResponse.data.content[0].text;
+        } catch (fallbackError) {
+          console.error('Erreur avec le modèle de fallback:', fallbackError);
+          throw new Error('Erreur lors de la génération du post avec Claude AI');
+        }
+      }
+      
       throw new Error('Erreur lors de la génération du post avec Claude AI');
     }
   }
@@ -346,7 +389,7 @@ class AIService {
       const response = await axios.post(
         'https://api.openai.com/v1/chat/completions',
         {
-          model: 'gpt-3.5-turbo',
+          model: 'gpt-4o',  // Utiliser GPT-4o pour de meilleurs résultats
           messages: [
             { role: 'system', content: 'Vous êtes un expert en marketing de contenu pour LinkedIn.' },
             { role: 'user', content: prompt }
@@ -365,6 +408,36 @@ class AIService {
       return response.data.choices[0].message.content;
     } catch (error) {
       console.error('Erreur lors de l\'appel à l\'API OpenAI:', error.response?.data || error.message);
+      
+      // Fallback sur un modèle plus léger si nécessaire
+      if (error.response?.status === 400) {
+        try {
+          console.log('Tentative avec GPT-3.5 Turbo...');
+          const fallbackResponse = await axios.post(
+            'https://api.openai.com/v1/chat/completions',
+            {
+              model: 'gpt-3.5-turbo',
+              messages: [
+                { role: 'system', content: 'Vous êtes un expert en marketing de contenu pour LinkedIn.' },
+                { role: 'user', content: prompt }
+              ],
+              max_tokens: 1024
+            },
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${this.apiKey}`
+              }
+            }
+          );
+          
+          return fallbackResponse.data.choices[0].message.content;
+        } catch (fallbackError) {
+          console.error('Erreur avec le modèle de fallback:', fallbackError);
+          throw new Error('Erreur lors de la génération du post avec OpenAI');
+        }
+      }
+      
       throw new Error('Erreur lors de la génération du post avec OpenAI');
     }
   }
