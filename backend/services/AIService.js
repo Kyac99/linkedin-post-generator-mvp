@@ -9,7 +9,7 @@ class AIService {
     this.apiType = apiType;
     
     // Vérifier si la clé API est valide
-    if (!this.apiKey || this.apiKey === 'votre_cle_api_claude' || this.apiKey === 'votre_cle_api_openai') {
+    if (!this.apiKey || this.apiKey === 'votre_cle_api_claude' || this.apiKey === 'votre_cle_api_openai' || this.apiKey === 'VOTRE_VRAIE_CLE_API_CLAUDE_ICI') {
       console.warn(`⚠️ Clé API ${this.apiType} non valide ou manquante`);
     } else {
       console.log(`✅ Clé API ${this.apiType} configurée`);
@@ -397,60 +397,84 @@ class AIService {
    * @param {string} prompt - Le prompt à envoyer à l'API
    */
   async callOpenAIApi(prompt) {
-    try {
-      const response = await axios.post(
-        'https://api.openai.com/v1/chat/completions',
-        {
-          model: 'gpt-4o',  // Utiliser GPT-4o pour de meilleurs résultats
-          messages: [
-            { role: 'system', content: 'Vous êtes un expert en marketing de contenu pour LinkedIn.' },
-            { role: 'user', content: prompt }
-          ],
-          max_tokens: 1024
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.apiKey}`
+    let retries = 0;
+    const maxRetries = 3;
+    const initialDelay = 1000; // 1 seconde
+
+    while (retries <= maxRetries) {
+      try {
+        const response = await axios.post(
+          'https://api.openai.com/v1/chat/completions',
+          {
+            model: 'gpt-4o-2024-05-13',  // Utiliser un modèle avec version spécifique
+            messages: [
+              { role: 'system', content: 'Vous êtes un expert en marketing de contenu pour LinkedIn.' },
+              { role: 'user', content: prompt }
+            ],
+            max_tokens: 1024,
+            temperature: 0.7
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${this.apiKey}`
+            },
+            timeout: 30000 // 30 secondes de timeout
+          }
+        );
+
+        // Extraire la réponse générée
+        return response.data.choices[0].message.content;
+      } catch (error) {
+        console.error(`Erreur lors de l'appel à l'API OpenAI (tentative ${retries + 1}/${maxRetries + 1}):`, error.response?.data || error.message);
+        
+        // Vérifier si l'erreur est récupérable (rate limit, timeout, etc.)
+        const isRateLimitError = error.response?.status === 429;
+        const isServerError = error.response?.status >= 500 && error.response?.status < 600;
+        const isTimeoutError = error.code === 'ECONNABORTED';
+        
+        if ((isRateLimitError || isServerError || isTimeoutError) && retries < maxRetries) {
+          // Backoff exponentiel
+          const delay = initialDelay * Math.pow(2, retries);
+          console.log(`Nouvelle tentative dans ${delay/1000} secondes...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          retries++;
+          continue;
+        }
+        
+        // Si l'erreur est due à un modèle indisponible ou à un problème de requête, essayer avec un modèle de repli
+        if (error.response?.status === 400 || error.response?.status === 404) {
+          try {
+            console.log('Tentative avec GPT-3.5 Turbo...');
+            const fallbackResponse = await axios.post(
+              'https://api.openai.com/v1/chat/completions',
+              {
+                model: 'gpt-3.5-turbo-0125', // Version spécifique de GPT-3.5 Turbo
+                messages: [
+                  { role: 'system', content: 'Vous êtes un expert en marketing de contenu pour LinkedIn.' },
+                  { role: 'user', content: prompt }
+                ],
+                max_tokens: 1024,
+                temperature: 0.7
+              },
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${this.apiKey}`
+                },
+                timeout: 30000
+              }
+            );
+            
+            return fallbackResponse.data.choices[0].message.content;
+          } catch (fallbackError) {
+            console.error('Erreur avec le modèle de fallback:', fallbackError);
+            throw new Error('Erreur lors de la génération du post avec OpenAI');
           }
         }
-      );
-
-      // Extraire la réponse générée
-      return response.data.choices[0].message.content;
-    } catch (error) {
-      console.error('Erreur lors de l\'appel à l\'API OpenAI:', error.response?.data || error.message);
-      
-      // Fallback sur un modèle plus léger si nécessaire
-      if (error.response?.status === 400) {
-        try {
-          console.log('Tentative avec GPT-3.5 Turbo...');
-          const fallbackResponse = await axios.post(
-            'https://api.openai.com/v1/chat/completions',
-            {
-              model: 'gpt-3.5-turbo',
-              messages: [
-                { role: 'system', content: 'Vous êtes un expert en marketing de contenu pour LinkedIn.' },
-                { role: 'user', content: prompt }
-              ],
-              max_tokens: 1024
-            },
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${this.apiKey}`
-              }
-            }
-          );
-          
-          return fallbackResponse.data.choices[0].message.content;
-        } catch (fallbackError) {
-          console.error('Erreur avec le modèle de fallback:', fallbackError);
-          throw new Error('Erreur lors de la génération du post avec OpenAI');
-        }
+        
+        throw new Error('Erreur lors de la génération du post avec OpenAI: ' + (error.response?.data?.error?.message || error.message));
       }
-      
-      throw new Error('Erreur lors de la génération du post avec OpenAI');
     }
   }
 
@@ -463,7 +487,7 @@ class AIService {
       this.apiKey = this.apiType === 'claude' ? process.env.CLAUDE_API_KEY : process.env.OPENAI_API_KEY;
       
       // Si toujours pas de clé, renvoyer false
-      if (!this.apiKey || this.apiKey === 'votre_cle_api_claude' || this.apiKey === 'votre_cle_api_openai') {
+      if (!this.apiKey || this.apiKey === 'votre_cle_api_claude' || this.apiKey === 'votre_cle_api_openai' || this.apiKey === 'VOTRE_VRAIE_CLE_API_CLAUDE_ICI') {
         return false;
       }
     }
