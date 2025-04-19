@@ -4,8 +4,16 @@ const { JSDOM } = require('jsdom');
 
 class AIService {
   constructor(apiKey, apiType = 'claude') {
-    this.apiKey = apiKey;
+    // Si une clé API est fournie, l'utiliser, sinon prendre celle définie dans les variables d'environnement
+    this.apiKey = apiKey || (apiType === 'claude' ? process.env.CLAUDE_API_KEY : process.env.OPENAI_API_KEY);
     this.apiType = apiType;
+    
+    // Vérifier si la clé API est valide
+    if (!this.apiKey || this.apiKey === 'votre_cle_api_claude' || this.apiKey === 'votre_cle_api_openai') {
+      console.warn(`⚠️ Clé API ${this.apiType} non valide ou manquante`);
+    } else {
+      console.log(`✅ Clé API ${this.apiType} configurée`);
+    }
   }
 
   /**
@@ -155,7 +163,7 @@ class AIService {
       const title = titleMatch ? titleMatch[1].replace(' - YouTube', '') : 'Vidéo YouTube';
       
       // Extraction simple de la description (à améliorer)
-      const descMatch = html.match(/"description":{"simpleText":"(.*?)"/);
+      const descMatch = html.match(/\"description\":{\"simpleText\":\"(.*?)\"/);
       const description = descMatch ? descMatch[1] : 'Pas de description disponible';
       
       return {
@@ -308,6 +316,10 @@ class AIService {
    * @param {string} prompt - Le prompt à envoyer à l'API
    */
   async callAIApi(prompt) {
+    if (!this.apiKey) {
+      throw new Error('Clé API IA manquante. Veuillez configurer une clé API dans les paramètres.');
+    }
+    
     if (this.apiType === 'claude') {
       return await this.callClaudeApi(prompt);
     } else if (this.apiType === 'openai') {
@@ -446,6 +458,16 @@ class AIService {
    * Vérifie la validité d'une clé API
    */
   async verifyApiKey() {
+    // Si pas de clé API définie, essayer de prendre celle du .env
+    if (!this.apiKey) {
+      this.apiKey = this.apiType === 'claude' ? process.env.CLAUDE_API_KEY : process.env.OPENAI_API_KEY;
+      
+      // Si toujours pas de clé, renvoyer false
+      if (!this.apiKey || this.apiKey === 'votre_cle_api_claude' || this.apiKey === 'votre_cle_api_openai') {
+        return false;
+      }
+    }
+    
     try {
       if (this.apiType === 'claude') {
         // Un simple appel d'API pour vérifier la validité de la clé
