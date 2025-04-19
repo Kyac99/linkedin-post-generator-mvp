@@ -56,6 +56,7 @@ class LinkedInService {
       console.log(`- Code: ${authorizationCode.substring(0, 10)}...`);
       console.log(`- Redirect URI: ${this.redirectUri}`);
       
+      // Création du corps de la requête
       const requestBody = {
         grant_type: 'authorization_code',
         code: authorizationCode,
@@ -71,14 +72,18 @@ class LinkedInService {
         }, null, 2)
       );
       
+      // Ajout d'un délai avant d'envoyer la requête pour éviter les problèmes de timing
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       const response = await axios.post(
         'https://www.linkedin.com/oauth/v2/accessToken',
         qs.stringify(requestBody),
         {
           headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json'
           },
-          timeout: 10000 // Timeout de 10 secondes
+          timeout: 15000 // Timeout de 15 secondes
         }
       );
 
@@ -99,6 +104,15 @@ class LinkedInService {
         console.error(`- Status: ${error.response.status}`);
         console.error(`- Data:`, JSON.stringify(error.response.data, null, 2));
         console.error(`- Headers:`, JSON.stringify(error.response.headers, null, 2));
+        
+        // Afficher les paramètres envoyés (sauf client_secret)
+        console.error('Paramètres envoyés:', JSON.stringify({
+          grant_type: 'authorization_code',
+          code: authorizationCode.substring(0, 10) + '...',
+          redirect_uri: this.redirectUri,
+          client_id: this.clientId,
+          client_secret: '***hidden***'
+        }, null, 2));
       } else if (error.request) {
         console.error('Aucune réponse reçue:', error.request);
       } else {
@@ -121,7 +135,8 @@ class LinkedInService {
         `${this.apiBaseUrl}/me`,
         {
           headers: {
-            'Authorization': `Bearer ${accessToken}`
+            'Authorization': `Bearer ${accessToken}`,
+            'Accept': 'application/json'
           }
         }
       );
@@ -143,7 +158,8 @@ class LinkedInService {
         `${this.apiBaseUrl}/emailAddress?q=members&projection=(elements*(handle~))`,
         {
           headers: {
-            'Authorization': `Bearer ${accessToken}`
+            'Authorization': `Bearer ${accessToken}`,
+            'Accept': 'application/json'
           }
         }
       );
@@ -189,7 +205,8 @@ class LinkedInService {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
-            'X-Restli-Protocol-Version': '2.0.0'
+            'X-Restli-Protocol-Version': '2.0.0',
+            'Accept': 'application/json'
           }
         }
       );
@@ -260,7 +277,8 @@ class LinkedInService {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json',
-            'X-Restli-Protocol-Version': '2.0.0'
+            'X-Restli-Protocol-Version': '2.0.0',
+            'Accept': 'application/json'
           }
         }
       );
@@ -306,7 +324,8 @@ class LinkedInService {
         }),
         {
           headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Accept': 'application/json'
           }
         }
       );
