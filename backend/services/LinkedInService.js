@@ -8,6 +8,11 @@ class LinkedInService {
     this.clientSecret = process.env.LINKEDIN_CLIENT_SECRET;
     this.redirectUri = process.env.LINKEDIN_REDIRECT_URI;
     this.apiBaseUrl = 'https://api.linkedin.com/v2';
+    
+    // Vérification des variables d'environnement essentielles
+    if (!this.clientId || !this.clientSecret || !this.redirectUri) {
+      console.warn("⚠️ Configuration LinkedIn incomplète. Veuillez vérifier vos variables d'environnement.");
+    }
   }
 
   /**
@@ -15,13 +20,20 @@ class LinkedInService {
    */
   getAuthUrl() {
     const scopes = ['r_emailaddress', 'r_liteprofile', 'w_member_social'];
+    const state = this.generateRandomState();
+    
+    console.log("Génération de l'URL d'authentification LinkedIn avec:");
+    console.log(`- Client ID: ${this.clientId ? this.clientId.substring(0, 5) + '...' : 'non défini'}`);
+    console.log(`- Redirect URI: ${this.redirectUri}`);
+    console.log(`- Scopes: ${scopes.join(', ')}`);
+    console.log(`- State: ${state}`);
     
     return `https://www.linkedin.com/oauth/v2/authorization?${qs.stringify({
       response_type: 'code',
       client_id: this.clientId,
       redirect_uri: this.redirectUri,
       scope: scopes.join(' '),
-      state: this.generateRandomState()
+      state: state
     })}`;
   }
 
@@ -38,15 +50,28 @@ class LinkedInService {
    */
   async getAccessToken(authorizationCode) {
     try {
+      console.log("Échange du code d'autorisation contre un token d'accès");
+      console.log(`- Code: ${authorizationCode.substring(0, 5)}...`);
+      console.log(`- Redirect URI: ${this.redirectUri}`);
+      
+      const requestBody = {
+        grant_type: 'authorization_code',
+        code: authorizationCode,
+        redirect_uri: this.redirectUri,
+        client_id: this.clientId,
+        client_secret: this.clientSecret
+      };
+      
+      console.log("Envoi de la requête à LinkedIn avec les paramètres:", 
+        JSON.stringify({
+          ...requestBody,
+          client_secret: '***hidden***'
+        }, null, 2)
+      );
+      
       const response = await axios.post(
         'https://www.linkedin.com/oauth/v2/accessToken',
-        qs.stringify({
-          grant_type: 'authorization_code',
-          code: authorizationCode,
-          redirect_uri: this.redirectUri,
-          client_id: this.clientId,
-          client_secret: this.clientSecret
-        }),
+        qs.stringify(requestBody),
         {
           headers: {
             'Content-Type': 'application/x-www-form-urlencoded'
@@ -54,10 +79,30 @@ class LinkedInService {
         }
       );
 
+      console.log("Réponse reçue de LinkedIn:", JSON.stringify({
+        status: response.status,
+        data: {
+          ...response.data,
+          access_token: response.data.access_token ? response.data.access_token.substring(0, 5) + '...' : null
+        }
+      }, null, 2));
+      
       return response.data;
     } catch (error) {
-      console.error('Erreur lors de l\'obtention du token LinkedIn:', error.response?.data || error.message);
-      const errorMessage = error.response?.data?.error_description || 'Impossible d\'obtenir le token d\'accès LinkedIn';
+      console.error('Erreur lors de l\'obtention du token LinkedIn:');
+      
+      if (error.response) {
+        console.error('Détails de la réponse d\'erreur:');
+        console.error(`- Status: ${error.response.status}`);
+        console.error(`- Data:`, JSON.stringify(error.response.data, null, 2));
+      } else if (error.request) {
+        console.error('Aucune réponse reçue:', error.request);
+      } else {
+        console.error('Erreur de configuration de la requête:', error.message);
+      }
+      
+      const errorMessage = error.response?.data?.error_description || 
+                          'Impossible d\'obtenir le token d\'accès LinkedIn';
       throw new Error(errorMessage);
     }
   }
