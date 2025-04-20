@@ -7,8 +7,13 @@ const AIService = require('../services/AIService');
 const validateAIKey = (req, res, next) => {
   const { aiApiKey, aiApiType } = req.headers;
   
+  console.log(`Vérification des en-têtes de requête pour l'API IA`);
+  console.log(`- aiApiType: ${aiApiType || 'non défini'}`);
+  console.log(`- aiApiKey présente: ${aiApiKey ? 'Oui' : 'Non'}`);
+  
   // Vérifier si une clé API est présente dans les en-têtes
-  if (!aiApiKey) {
+  if (!aiApiKey || aiApiKey.trim() === '') {
+    console.error('Aucune clé API fournie dans les en-têtes');
     return res.status(401).json({ message: 'Clé API IA manquante' });
   }
   
@@ -19,8 +24,9 @@ const validateAIKey = (req, res, next) => {
     req.aiApiType = aiApiType;
   }
   
+  console.log(`Utilisation de l'API ${req.aiApiType} avec la clé fournie`);
+  
   // Créer le service AI avec la clé fournie dans les en-têtes
-  // Forcer l'utilisation de cette clé uniquement, pas celle du .env
   req.aiService = new AIService(aiApiKey, req.aiApiType);
   
   next();
