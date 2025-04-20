@@ -4,15 +4,15 @@ const { JSDOM } = require('jsdom');
 
 class AIService {
   constructor(apiKey, apiType = 'claude') {
-    // Si une clé API est fournie, l'utiliser, sinon prendre celle définie dans les variables d'environnement
-    this.apiKey = apiKey || (apiType === 'claude' ? process.env.CLAUDE_API_KEY : process.env.OPENAI_API_KEY);
+    // N'utiliser que la clé API fournie explicitement, pas celle du .env
+    this.apiKey = apiKey;
     this.apiType = apiType;
     
     // Vérifier si la clé API est valide
-    if (!this.apiKey || this.apiKey === 'votre_cle_api_claude' || this.apiKey === 'votre_cle_api_openai' || this.apiKey === 'VOTRE_VRAIE_CLE_API_CLAUDE_ICI') {
-      console.warn(`⚠️ Clé API ${this.apiType} non valide ou manquante`);
+    if (!this.apiKey) {
+      console.warn(`⚠️ Clé API ${this.apiType} non fournie`);
     } else {
-      console.log(`✅ Clé API ${this.apiType} configurée`);
+      console.log(`✅ Clé API ${this.apiType} reçue, longueur: ${this.apiKey.length} caractères`);
     }
   }
 
@@ -482,14 +482,9 @@ class AIService {
    * Vérifie la validité d'une clé API
    */
   async verifyApiKey() {
-    // Si pas de clé API définie, essayer de prendre celle du .env
+    // Vérifier si une clé API est fournie
     if (!this.apiKey) {
-      this.apiKey = this.apiType === 'claude' ? process.env.CLAUDE_API_KEY : process.env.OPENAI_API_KEY;
-      
-      // Si toujours pas de clé, renvoyer false
-      if (!this.apiKey || this.apiKey === 'votre_cle_api_claude' || this.apiKey === 'votre_cle_api_openai' || this.apiKey === 'VOTRE_VRAIE_CLE_API_CLAUDE_ICI') {
-        return false;
-      }
+      return false;
     }
     
     try {
