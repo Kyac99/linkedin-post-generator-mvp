@@ -15,6 +15,17 @@ const ArticleToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
       return;
     }
     
+    // Vérifier si une clé API est configurée
+    const apiKey = localStorage.getItem('aiApiKey');
+    const apiType = localStorage.getItem('aiApiType') || 'claude';
+    
+    if (!apiKey || apiKey.trim() === '') {
+      setError('Veuillez configurer une clé API dans les paramètres');
+      return;
+    }
+    
+    console.log(`Utilisation de la clé API ${apiType}:`, apiKey.substring(0, 5) + '...');
+    
     setError('');
     setIsGenerating(true);
     
@@ -24,8 +35,8 @@ const ArticleToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'aiApiKey': localStorage.getItem('aiApiKey'),
-          'aiApiType': localStorage.getItem('aiApiType') || 'claude',
+          'aiApiKey': apiKey,
+          'aiApiType': apiType,
         },
         body: JSON.stringify({
           article: articleInput,
