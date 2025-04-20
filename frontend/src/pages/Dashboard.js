@@ -19,6 +19,7 @@ const Dashboard = () => {
   const [linkTitle, setLinkTitle] = useState('');
   const [linkDescription, setLinkDescription] = useState('');
   const [userProfile, setUserProfile] = useState(null);
+  const [linkedInError, setLinkedInError] = useState(false);
 
   // Récupérer le profil utilisateur au chargement
   useEffect(() => {
@@ -36,9 +37,19 @@ const Dashboard = () => {
         if (response.ok) {
           const data = await response.json();
           setUserProfile(data.profile);
+          setLinkedInError(false);
+        } else {
+          // Token révoqué ou expiré
+          if (response.status === 401) {
+            console.warn("Token LinkedIn révoqué ou expiré");
+            setLinkedInError(true);
+            // Optionnel : Effacer le token stocké puisqu'il n'est plus valide
+            localStorage.removeItem('linkedInToken');
+          }
         }
       } catch (error) {
         console.error("Erreur lors de la récupération du profil:", error);
+        setLinkedInError(true);
       }
     };
 
@@ -77,6 +88,17 @@ const Dashboard = () => {
       return;
     }
 
+    // Vérifier si l'utilisateur est connecté à LinkedIn
+    const linkedInToken = localStorage.getItem('linkedInToken');
+    if (!linkedInToken) {
+      setNotification({ 
+        show: true, 
+        type: 'error', 
+        message: 'Vous devez d\'abord vous connecter à LinkedIn dans les paramètres' 
+      });
+      return;
+    }
+
     setIsPosting(true);
     
     try {
@@ -91,7 +113,7 @@ const Dashboard = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'linkedintoken': localStorage.getItem('linkedInToken')
+          'linkedintoken': linkedInToken
         },
         body: JSON.stringify(body),
       });
@@ -110,7 +132,14 @@ const Dashboard = () => {
         setLinkTitle('');
         setLinkDescription('');
       } else {
-        throw new Error(data.message || 'Erreur lors de la publication');
+        // Si erreur 401, c'est que le token est expiré ou révoqué
+        if (response.status === 401) {
+          setLinkedInError(true);
+          localStorage.removeItem('linkedInToken');
+          throw new Error('Votre session LinkedIn a expiré. Veuillez vous reconnecter dans les paramètres.');
+        } else {
+          throw new Error(data.message || 'Erreur lors de la publication');
+        }
       }
     } catch (error) {
       console.error('Publication error:', error);
@@ -167,6 +196,12 @@ const Dashboard = () => {
       {notification.show && (
         <div className={`notification ${notification.type}`}>
           {notification.message}
+        </div>
+      )}
+      
+      {linkedInError && (
+        <div className="linkedin-error-banner">
+          <span>Votre session LinkedIn a expiré. Veuillez vous reconnecter dans les paramètres.</span>
         </div>
       )}
       
@@ -285,10 +320,14 @@ const Dashboard = () => {
           <button 
             className="publish-button" 
             onClick={handlePublish}
-            disabled={isPosting}
+            disabled={isPosting || linkedInError}
           >
             {isPosting ? 'Publication en cours...' : 'Publier sur LinkedIn'}
           </button>
+          
+          {linkedInError && (
+            <p className="error-message">Vous devez vous reconnecter à LinkedIn dans les paramètres avant de pouvoir publier.</p>
+          )}
         </div>
       )}
       
