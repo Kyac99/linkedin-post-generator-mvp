@@ -75,6 +75,8 @@ const Settings = () => {
     setNotification({ show: false });
     
     try {
+      console.log(`Tentative de mise à jour de la clé API ${aiApiType}:`, aiApiKey.substring(0, 5) + '...');
+      
       // Vérifier la validité de la clé API
       const response = await fetch('/api/auth/verify-ai-key', {
         method: 'POST',
@@ -94,11 +96,20 @@ const Settings = () => {
         localStorage.setItem('aiApiKey', aiApiKey);
         localStorage.setItem('aiApiType', aiApiType);
         
+        console.log(`Clé API ${aiApiType} mise à jour et stockée dans localStorage`);
+        
         setNotification({
           show: true,
           type: 'success',
           message: 'Clé API mise à jour avec succès'
         });
+        
+        // Ajout d'un délai pour s'assurer que la mise à jour est bien prise en compte
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Un test rapide pour confirmer que la clé a bien été stockée
+        const storedKey = localStorage.getItem('aiApiKey');
+        console.log(`Clé stockée (vérification): ${storedKey ? storedKey.substring(0, 5) + '...' : 'non définie'}`);
       } else {
         throw new Error(data.message || 'Clé API invalide');
       }
