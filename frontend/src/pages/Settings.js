@@ -49,9 +49,20 @@ const Settings = () => {
         if (profileResponse.ok) {
           const profileData = await profileResponse.json();
           // Stocker les informations du profil si nécessaire
+        } else if (profileResponse.status === 401) {
+          // Token révoqué ou expiré
+          console.warn("Token LinkedIn révoqué ou expiré");
+          setLinkedInStatus('expired');
+          localStorage.removeItem('linkedInToken');
         }
       } else {
-        setLinkedInStatus('expired');
+        if (response.status === 401) {
+          // Token révoqué ou expiré
+          setLinkedInStatus('expired');
+          localStorage.removeItem('linkedInToken');
+        } else {
+          setLinkedInStatus('error');
+        }
       }
     } catch (error) {
       console.error('LinkedIn status check error:', error);
@@ -132,6 +143,9 @@ const Settings = () => {
 
   const handleReconnectLinkedIn = async () => {
     try {
+      // Supprimer le token existant s'il y en a un
+      localStorage.removeItem('linkedInToken');
+      
       const response = await fetch('/api/auth/linkedin/url');
       const data = await response.json();
       
@@ -251,14 +265,22 @@ const Settings = () => {
             onClick={handleReconnectLinkedIn} 
             className="linkedin-button"
           >
-            Se reconnecter à LinkedIn
+            Se connecter à LinkedIn
           </button>
         )}
         
         {linkedInStatus === 'connected' && (
-          <p className="status-info">
-            Votre connexion à LinkedIn est active. Vous pouvez publier des posts directement depuis l'application.
-          </p>
+          <div>
+            <p className="status-info">
+              Votre connexion à LinkedIn est active. Vous pouvez publier des posts directement depuis l'application.
+            </p>
+            <button 
+              onClick={handleReconnectLinkedIn} 
+              className="linkedin-button secondary"
+            >
+              Se reconnecter à LinkedIn
+            </button>
+          </div>
         )}
       </div>
       
