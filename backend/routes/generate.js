@@ -7,17 +7,18 @@ const AIService = require('../services/AIService');
 const validateAIKey = (req, res, next) => {
   const { aiApiKey, aiApiType } = req.headers;
   
-  if (!aiApiKey) {
-    return res.status(401).json({ message: 'Clé API IA manquante' });
-  }
-  
+  // Déterminer le type d'API à utiliser
   if (!['claude', 'openai'].includes(aiApiType)) {
     req.aiApiType = process.env.DEFAULT_AI_PROVIDER || 'claude'; // Valeur par défaut
   } else {
     req.aiApiType = aiApiType;
   }
   
+  // Créer le service AI même si la clé API est manquante dans les en-têtes
+  // La classe AIService utilisera automatiquement la clé du fichier .env si nécessaire
   req.aiService = new AIService(aiApiKey, req.aiApiType);
+  
+  // Pas besoin de vérifier la clé ici car AIService le fera automatiquement
   next();
 };
 
