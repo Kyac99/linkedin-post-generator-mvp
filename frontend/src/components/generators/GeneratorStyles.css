@@ -69,6 +69,27 @@
   font-size: 0.9rem;
 }
 
+/* Avertissement de clé API manquante */
+.api-key-warning {
+  color: #856404;
+  background-color: #fff3cd;
+  border: 1px solid #ffeeba;
+  border-radius: 0.4rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 0.9rem;
+}
+
+.api-key-warning a {
+  color: #0077b5;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.api-key-warning a:hover {
+  text-decoration: underline;
+}
+
 .generate-button {
   width: 100%;
   padding: 1rem;
