@@ -8,11 +8,21 @@ class AIService {
     this.apiKey = apiKey;
     this.apiType = apiType;
     
-    // Vérifier si la clé API est valide
+    // Vérifier si la clé API est valide et la journaliser
     if (!this.apiKey) {
       console.warn(`⚠️ Clé API ${this.apiType} non fournie`);
     } else {
-      console.log(`✅ Clé API ${this.apiType} reçue, longueur: ${this.apiKey.length} caractères`);
+      // Pour des raisons de sécurité, ne jamais afficher la clé complète dans les logs
+      const firstChars = this.apiKey.substring(0, 4);
+      const lastChars = this.apiKey.substring(this.apiKey.length - 4);
+      console.log(`✅ Clé API ${this.apiType} reçue: ${firstChars}...${lastChars} (longueur: ${this.apiKey.length} caractères)`);
+      
+      // Vérifier si la clé a le bon format en fonction du type d'API
+      if (this.apiType === 'claude' && !this.apiKey.startsWith('sk-ant-')) {
+        console.warn('⚠️ Format de clé Claude potentiellement invalide (devrait commencer par sk-ant-)');
+      } else if (this.apiType === 'openai' && !this.apiKey.startsWith('sk-')) {
+        console.warn('⚠️ Format de clé OpenAI potentiellement invalide (devrait commencer par sk-)');
+      }
     }
   }
 
@@ -337,11 +347,11 @@ class AIService {
     try {
       console.log('Appel à l\'API Claude...');
       
-      // Utiliser le modèle Claude 3 Haiku - modèle le plus récent et fiable
+      // Utiliser le modèle Claude 3 Sonnet - modèle performant et stable
       const response = await axios.post(
         'https://api.anthropic.com/v1/messages',
         {
-          model: 'claude-3-haiku-20240307',  // Modèle stable et disponible
+          model: 'claude-3-sonnet-20240229',  // Modèle Sonnet stable et performant
           max_tokens: 1024,
           messages: [
             { role: 'user', content: prompt }
@@ -357,22 +367,71 @@ class AIService {
         }
       );
 
+      // Log du statut de la réponse
+      console.log("Statut de l'appel Claude:", response.status);
+      console.log("Type de réponse:", typeof response.data);
+      console.log("Clés dans la réponse:", Object.keys(response.data));
+
       // Extraire la réponse générée
       if (response.data && response.data.content && response.data.content.length > 0) {
+        console.log("Longueur de la réponse Claude:", response.data.content[0].text.length);
         return response.data.content[0].text;
       } else {
+        console.error("Réponse Claude inattendue:", JSON.stringify(response.data));
         throw new Error('Format de réponse inattendu de Claude AI');
       }
     } catch (error) {
-      console.error('Erreur lors de l\'appel à l\'API Claude:', error);
+      console.error('Erreur lors de l\'appel à l\'API Claude:', 
+                   error.response?.status, 
+                   error.response?.data || error.message);
       
       // Afficher des détails plus spécifiques sur l'erreur pour le débogage
       if (error.response) {
         console.error('Détails de la réponse d\'erreur:', {
           status: error.response.status,
           statusText: error.response.statusText,
+          headers: error.response.headers,
           data: error.response.data
         });
+        
+        // Erreur de modèle non trouvé
+        if (error.response.status === 404) {
+          // Fallback vers Claude Haiku si Sonnet n'est pas disponible
+          try {
+            console.log('Tentative avec Claude 3 Haiku...');
+            const fallbackResponse = await axios.post(
+              'https://api.anthropic.com/v1/messages',
+              {
+                model: 'claude-3-haiku-20240307',
+                max_tokens: 1024,
+                messages: [
+                  { role: 'user', content: prompt }
+                ]
+              },
+              {
+                headers: {
+                  'Content-Type': 'application/json',
+                  'x-api-key': this.apiKey,
+                  'anthropic-version': '2023-06-01'
+                },
+                timeout: 30000
+              }
+            );
+            
+            console.log("Statut de l'appel Claude Haiku:", fallbackResponse.status);
+            
+            if (fallbackResponse.data && fallbackResponse.data.content && fallbackResponse.data.content.length > 0) {
+              return fallbackResponse.data.content[0].text;
+            } else {
+              throw new Error('Format de réponse inattendu de Claude Haiku');
+            }
+          } catch (fallbackError) {
+            console.error('Erreur avec le modèle de fallback Claude Haiku:', 
+                         fallbackError.response?.status, 
+                         fallbackError.response?.data || fallbackError.message);
+            throw new Error('Erreur lors de la génération du post avec Claude AI');
+          }
+        }
         
         // Erreur d'authentification
         if (error.response.status === 401) {
@@ -428,20 +487,30 @@ class AIService {
           }
         );
 
+        // Log du statut de la réponse
+        console.log("Statut de l'appel OpenAI:", response.status);
+        console.log("Type de réponse:", typeof response.data);
+        console.log("Clés dans la réponse:", Object.keys(response.data));
+
         // Extraire la réponse générée
         if (response.data && response.data.choices && response.data.choices.length > 0) {
+          console.log("Longueur de la réponse OpenAI:", response.data.choices[0].message.content.length);
           return response.data.choices[0].message.content;
         } else {
+          console.error("Réponse OpenAI inattendue:", JSON.stringify(response.data));
           throw new Error('Format de réponse inattendu de OpenAI');
         }
       } catch (error) {
-        console.error(`Erreur lors de l'appel à l'API OpenAI (tentative ${retries + 1}/${maxRetries + 1}):`, error);
+        console.error(`Erreur lors de l'appel à l'API OpenAI (tentative ${retries + 1}/${maxRetries + 1}):`, 
+                     error.response?.status, 
+                     error.response?.data || error.message);
         
         // Afficher des détails plus spécifiques sur l'erreur pour le débogage
         if (error.response) {
           console.error('Détails de la réponse d\'erreur:', {
             status: error.response.status,
             statusText: error.response.statusText,
+            headers: error.response.headers,
             data: error.response.data
           });
         }
@@ -484,9 +553,17 @@ class AIService {
               }
             );
             
-            return fallbackResponse.data.choices[0].message.content;
+            console.log("Statut de l'appel GPT-3.5 Turbo:", fallbackResponse.status);
+            
+            if (fallbackResponse.data && fallbackResponse.data.choices && fallbackResponse.data.choices.length > 0) {
+              return fallbackResponse.data.choices[0].message.content;
+            } else {
+              throw new Error('Format de réponse inattendu de GPT-3.5 Turbo');
+            }
           } catch (fallbackError) {
-            console.error('Erreur avec le modèle de fallback:', fallbackError);
+            console.error('Erreur avec le modèle de fallback:', 
+                         fallbackError.response?.status, 
+                         fallbackError.response?.data || fallbackError.message);
             throw new Error('Erreur lors de la génération du post avec OpenAI');
           }
         }
@@ -542,6 +619,7 @@ class AIService {
           }
         );
         
+        console.log("Statut de la vérification Claude:", response.status);
         return response.status === 200;
       } else if (this.apiType === 'openai') {
         const response = await axios.post(
@@ -562,6 +640,7 @@ class AIService {
           }
         );
         
+        console.log("Statut de la vérification OpenAI:", response.status);
         return response.status === 200;
       }
       
