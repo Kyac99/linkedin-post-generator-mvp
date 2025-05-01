@@ -8,6 +8,7 @@ const Settings = () => {
   const [linkedInStatus, setLinkedInStatus] = useState('checking');
   const [notification, setNotification] = useState({ show: false, type: '', message: '' });
   const [loading, setLoading] = useState(false);
+  const [isKeyConfigured, setIsKeyConfigured] = useState(false);
 
   useEffect(() => {
     // Récupérer les informations stockées
@@ -16,6 +17,7 @@ const Settings = () => {
     
     setAiApiKey(storedApiKey);
     setAiApiType(storedApiType);
+    setIsKeyConfigured(storedApiKey && storedApiKey.trim() !== '');
     
     // Vérifier le statut de connexion LinkedIn
     checkLinkedInStatus();
@@ -106,6 +108,7 @@ const Settings = () => {
         // Stocker la nouvelle clé API
         localStorage.setItem('aiApiKey', aiApiKey);
         localStorage.setItem('aiApiType', aiApiType);
+        setIsKeyConfigured(true);
         
         console.log(`Clé API ${aiApiType} mise à jour et stockée dans localStorage`);
         
@@ -121,6 +124,11 @@ const Settings = () => {
         // Un test rapide pour confirmer que la clé a bien été stockée
         const storedKey = localStorage.getItem('aiApiKey');
         console.log(`Clé stockée (vérification): ${storedKey ? storedKey.substring(0, 5) + '...' : 'non définie'}`);
+        
+        // Rafraîchir l'application après mise à jour de la clé API (optionnel)
+        if (window.location.pathname !== '/settings') {
+          window.location.reload();
+        }
       } else {
         throw new Error(data.message || 'Clé API invalide');
       }
@@ -131,13 +139,14 @@ const Settings = () => {
         type: 'error',
         message: `Erreur: ${error.message}`
       });
+      setIsKeyConfigured(false);
     } finally {
       setLoading(false);
       
       // Masquer la notification après 3 secondes
       setTimeout(() => {
         setNotification({ show: false });
-      }, 3000);
+      }, 5000);
     }
   };
 
@@ -165,7 +174,7 @@ const Settings = () => {
       
       setTimeout(() => {
         setNotification({ show: false });
-      }, 3000);
+      }, 5000);
     }
   };
 
@@ -197,6 +206,22 @@ const Settings = () => {
         return '';
     }
   };
+  
+  const clearApiKey = () => {
+    localStorage.removeItem('aiApiKey');
+    localStorage.removeItem('aiApiType');
+    setAiApiKey('');
+    setIsKeyConfigured(false);
+    setNotification({
+      show: true,
+      type: 'info',
+      message: 'Clé API supprimée'
+    });
+    
+    setTimeout(() => {
+      setNotification({ show: false });
+    }, 3000);
+  };
 
   return (
     <div className="settings-container">
@@ -210,6 +235,13 @@ const Settings = () => {
       
       <div className="settings-card">
         <h2>Configuration API IA</h2>
+        
+        {isKeyConfigured && (
+          <div className="key-status-indicator success">
+            <span className="status-dot"></span>
+            <span>Clé API {aiApiType === 'claude' ? 'Claude AI' : 'OpenAI'} configurée</span>
+          </div>
+        )}
         
         <form onSubmit={handleUpdateApiKey}>
           <div className="form-group">
@@ -234,12 +266,23 @@ const Settings = () => {
           
           <div className="form-group">
             <label>Clé API {aiApiType === 'claude' ? 'Claude AI' : 'OpenAI'}:</label>
-            <input
-              type="password"
-              value={aiApiKey}
-              onChange={(e) => setAiApiKey(e.target.value)}
-              placeholder={`Entrez votre clé API ${aiApiType === 'claude' ? 'Claude AI' : 'OpenAI'}`}
-            />
+            <div className="api-key-input-group">
+              <input
+                type="password"
+                value={aiApiKey}
+                onChange={(e) => setAiApiKey(e.target.value)}
+                placeholder={`Entrez votre clé API ${aiApiType === 'claude' ? 'Claude AI' : 'OpenAI'}`}
+              />
+              {isKeyConfigured && (
+                <button 
+                  type="button" 
+                  className="clear-button"
+                  onClick={clearApiKey}
+                >
+                  ×
+                </button>
+              )}
+            </div>
           </div>
           
           <button 
@@ -250,6 +293,16 @@ const Settings = () => {
             {loading ? 'Mise à jour...' : 'Mettre à jour la clé API'}
           </button>
         </form>
+        
+        <div className="api-key-help">
+          <p>
+            <strong>Comment obtenir une clé API:</strong>
+          </p>
+          <ul>
+            <li>Pour Claude AI, visitez <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer">console.anthropic.com</a></li>
+            <li>Pour OpenAI, visitez <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">platform.openai.com/api-keys</a></li>
+          </ul>
+        </div>
       </div>
       
       <div className="settings-card">
