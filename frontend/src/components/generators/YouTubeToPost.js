@@ -1,5 +1,5 @@
 // frontend/src/components/generators/YouTubeToPost.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './GeneratorStyles.css';
 
 const YouTubeToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
@@ -7,6 +7,27 @@ const YouTubeToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
   const [transcription, setTranscription] = useState('');
   const [includeTranscription, setIncludeTranscription] = useState(false);
   const [error, setError] = useState('');
+  const [isApiKeyConfigured, setIsApiKeyConfigured] = useState(false);
+
+  // Vérifier si une clé API est configurée au chargement du composant
+  useEffect(() => {
+    const checkApiKey = () => {
+      const apiKey = localStorage.getItem('aiApiKey');
+      if (apiKey && apiKey.trim() !== '') {
+        setIsApiKeyConfigured(true);
+        setError('');
+      } else {
+        setIsApiKeyConfigured(false);
+        setError('Veuillez configurer une clé API dans les paramètres');
+      }
+    };
+
+    checkApiKey();
+    // Vérifier à nouveau la clé API toutes les 5 secondes au cas où l'utilisateur la configure dans un autre onglet
+    const interval = setInterval(checkApiKey, 5000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   // Valider l'URL YouTube
   const isValidYoutubeUrl = (url) => {
@@ -27,6 +48,17 @@ const YouTubeToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
       return;
     }
     
+    // Vérifier à nouveau si une clé API est configurée
+    const apiKey = localStorage.getItem('aiApiKey');
+    const apiType = localStorage.getItem('aiApiType') || 'claude';
+    
+    if (!apiKey || apiKey.trim() === '') {
+      setError('Veuillez configurer une clé API dans les paramètres');
+      return;
+    }
+    
+    console.log(`Utilisation de la clé API ${apiType}:`, apiKey.substring(0, 5) + '...');
+    
     setError('');
     setIsGenerating(true);
     
@@ -36,8 +68,8 @@ const YouTubeToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'aiApiKey': localStorage.getItem('aiApiKey'),
-          'aiApiType': localStorage.getItem('aiApiType') || 'claude',
+          'aiApiKey': apiKey,
+          'aiApiType': apiType,
         },
         body: JSON.stringify({
           videoUrl,
@@ -64,6 +96,12 @@ const YouTubeToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
   return (
     <div className="generator-container">
       <h2>YouTube vers Post LinkedIn</h2>
+      
+      {!isApiKeyConfigured && (
+        <div className="api-key-warning">
+          <p>⚠️ Aucune clé API n'est configurée. Veuillez configurer une clé API dans les <a href="/settings">paramètres</a>.</p>
+        </div>
+      )}
       
       <form onSubmit={handleSubmit}>
         <input
@@ -97,7 +135,11 @@ const YouTubeToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
         
         {error && <p className="error-message">{error}</p>}
         
-        <button type="submit" className="generate-button">
+        <button 
+          type="submit" 
+          className="generate-button"
+          disabled={!isApiKeyConfigured}
+        >
           Générer un post {selectedTone && `(Ton: ${selectedTone})`}
         </button>
       </form>
