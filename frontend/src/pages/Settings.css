@@ -47,7 +47,6 @@
   font-size: 1rem;
 }
 
-.update-button,
 .linkedin-button {
   background-color: #0077b5;
   color: white;
@@ -59,43 +58,13 @@
   transition: background-color 0.3s ease;
 }
 
-.update-button:hover,
 .linkedin-button:hover {
   background-color: #005983;
 }
 
-.update-button:disabled,
 .linkedin-button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
-}
-
-.api-type-selector {
-  display: flex;
-  margin-bottom: 1rem;
-}
-
-.api-type-selector button {
-  flex: 1;
-  padding: 0.8rem;
-  background-color: #f8f8f8;
-  border: 1px solid #ddd;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.api-type-selector button:first-child {
-  border-radius: 4px 0 0 4px;
-}
-
-.api-type-selector button:last-child {
-  border-radius: 0 4px 4px 0;
-}
-
-.api-type-selector button.active {
-  background-color: #0077b5;
-  color: white;
-  border-color: #0077b5;
 }
 
 .linkedin-status {
@@ -173,81 +142,87 @@
   background-color: #f0f7fb;
 }
 
-/* Nouveaux styles pour la gestion des clés API */
-.api-key-input-group {
-  position: relative;
+/* Styles pour le statut des API */
+.api-status-container {
+  margin-bottom: 1.5rem;
+}
+
+.api-status-item {
   display: flex;
-  align-items: center;
-}
-
-.api-key-input-group input {
-  flex: 1;
-  padding-right: 40px;
-}
-
-.clear-button {
-  position: absolute;
-  right: 10px;
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: #999;
-  cursor: pointer;
-  transition: color 0.3s ease;
-}
-
-.clear-button:hover {
-  color: #ff5630;
-}
-
-.key-status-indicator {
-  display: flex;
-  align-items: center;
-  margin-bottom: 1rem;
+  justify-content: space-between;
   padding: 0.8rem;
   border-radius: 4px;
-  font-size: 0.9rem;
+  margin-bottom: 0.8rem;
+  background-color: #f9f9f9;
 }
 
-.key-status-indicator.success {
+.api-status-item .api-name {
+  font-weight: 600;
+}
+
+.api-status-item.status-valid {
   background-color: #e3fcef;
-  color: #006644;
+  border-left: 4px solid #36b37e;
 }
 
-.key-status-indicator .status-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  margin-right: 8px;
+.api-status-item.status-invalid {
+  background-color: #fff0e6;
+  border-left: 4px solid #ffab00;
 }
 
-.key-status-indicator.success .status-dot {
-  background-color: #36b37e;
+.api-status-item.status-not-configured {
+  background-color: #f4f4f4;
+  border-left: 4px solid #999;
+  color: #666;
 }
 
-/* Aide pour l'obtention des clés API */
-.api-key-help {
-  margin-top: 2rem;
-  background-color: #f8f9fa;
+.api-provider-default {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.8rem;
+  background-color: #e6f6ff;
   border-radius: 4px;
-  padding: 1rem;
-  font-size: 0.9rem;
+  margin-top: 1rem;
 }
 
-.api-key-help ul {
-  padding-left: 1.5rem;
-  margin-top: 0.5rem;
-}
-
-.api-key-help li {
-  margin-bottom: 0.5rem;
-}
-
-.api-key-help a {
+.api-provider-default .default-provider {
+  font-weight: 600;
   color: #0077b5;
-  text-decoration: none;
 }
 
-.api-key-help a:hover {
-  text-decoration: underline;
+.api-status-info {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.api-status-info p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .settings-container {
+    padding: 1rem;
+  }
+  
+  .settings-card {
+    padding: 1rem;
+  }
+  
+  .settings-container h1 {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .linkedin-button,
+  .api-status-item,
+  .api-provider-default {
+    padding: 0.6rem;
+    font-size: 0.9rem;
+  }
 }
