@@ -5,24 +5,58 @@ const AIService = require('../services/AIService');
 
 // Middleware pour extraire et vérifier la clé API
 const validateAIKey = (req, res, next) => {
-  const { aiApiKey, aiApiType } = req.headers;
+  // Journaliser tous les en-têtes reçus pour le débogage (en masquant les valeurs sensibles)
+  console.log('Tous les en-têtes reçus:');
+  const headers = Object.keys(req.headers).map(key => {
+    if (key.toLowerCase().includes('key') || key.toLowerCase().includes('auth') || key.toLowerCase().includes('token')) {
+      return `${key}: ***MASKED***`;
+    }
+    return `${key}: ${req.headers[key]}`;
+  });
+  console.log(headers.join('\n'));
   
-  console.log(`Vérification des en-têtes de requête pour l'API IA`);
-  console.log(`- aiApiType: ${aiApiType || 'non défini'}`);
+  // On recherche la clé d'API sans tenir compte de la casse
+  let apiKey = null;
+  let apiType = null;
   
-  // Journaliser la présence de la clé API de manière sécurisée
-  if (aiApiKey) {
-    const firstChars = aiApiKey.substring(0, 3);
-    const lastChars = aiApiKey.substring(aiApiKey.length - 3);
-    const length = aiApiKey.length;
-    console.log(`- aiApiKey présente: Oui (format: ${firstChars}...${lastChars}, longueur: ${length})`);
-  } else {
-    console.error('- aiApiKey présente: Non');
+  // Chercher les en-têtes en ignorant la casse
+  for (const header in req.headers) {
+    if (header.toLowerCase() === 'aiapikey') {
+      apiKey = req.headers[header];
+    }
+    if (header.toLowerCase() === 'aiapitype') {
+      apiType = req.headers[header];
+    }
   }
   
-  // Vérifier si une clé API est présente dans les en-têtes
-  if (!aiApiKey || aiApiKey.trim() === '') {
-    console.error('Aucune clé API fournie dans les en-têtes - Requête rejetée');
+  console.log(`Vérification des en-têtes de requête pour l'API IA`);
+  console.log(`- 'aiApiType' trouvé: ${apiType || 'non défini'}`);
+  
+  // Journaliser la présence de la clé API de manière sécurisée
+  if (apiKey) {
+    const firstChars = apiKey.substring(0, 3);
+    const lastChars = apiKey.substring(apiKey.length - 3);
+    const length = apiKey.length;
+    console.log(`- 'aiApiKey' trouvé: Oui (format: ${firstChars}...${lastChars}, longueur: ${length})`);
+  } else {
+    console.error(`- 'aiApiKey' trouvé: Non`);
+    
+    // Vérifier si la clé est peut-être dans un autre en-tête ou dans le corps de la requête
+    console.log('Recherche alternative de la clé API...');
+    
+    // Vérifier dans le corps de la requête
+    if (req.body && req.body.aiApiKey) {
+      console.log('Clé API trouvée dans le corps de la requête');
+      apiKey = req.body.aiApiKey;
+      if (!apiType && req.body.aiApiType) {
+        apiType = req.body.aiApiType;
+      }
+    }
+  }
+  
+  // Vérifier si une clé API est présente
+  if (!apiKey || apiKey.trim() === '') {
+    console.error('Aucune clé API trouvée dans les en-têtes ni le corps - Requête rejetée');
     return res.status(401).json({ 
       message: 'Clé API IA manquante. Veuillez configurer une clé API dans les paramètres.',
       code: 'API_KEY_MISSING'
@@ -30,25 +64,28 @@ const validateAIKey = (req, res, next) => {
   }
   
   // Vérification rapide du format de la clé API
-  if (aiApiType === 'claude' && !aiApiKey.startsWith('sk-ant-')) {
+  if (apiType === 'claude' && !apiKey.startsWith('sk-ant-')) {
     console.warn('Format de clé Claude potentiellement invalide (ne commence pas par sk-ant-)');
-  } else if (aiApiType === 'openai' && !aiApiKey.startsWith('sk-')) {
+  } else if (apiType === 'openai' && !apiKey.startsWith('sk-')) {
     console.warn('Format de clé OpenAI potentiellement invalide (ne commence pas par sk-)');
   }
   
   // Déterminer le type d'API à utiliser
-  if (!['claude', 'openai'].includes(aiApiType)) {
+  if (!['claude', 'openai'].includes(apiType)) {
     req.aiApiType = process.env.DEFAULT_AI_PROVIDER || 'claude'; // Valeur par défaut
-    console.log(`Type d'API non spécifié, utilisation de la valeur par défaut: ${req.aiApiType}`);
+    console.log(`Type d'API non spécifié ou invalide, utilisation de la valeur par défaut: ${req.aiApiType}`);
   } else {
-    req.aiApiType = aiApiType;
+    req.aiApiType = apiType;
     console.log(`Type d'API spécifié: ${req.aiApiType}`);
   }
   
   console.log(`Initialisation du service AI avec le type ${req.aiApiType}`);
   
-  // Créer le service AI avec la clé fournie dans les en-têtes
-  req.aiService = new AIService(aiApiKey, req.aiApiType);
+  // Sauvegarder la clé API pour les routes
+  req.aiApiKey = apiKey;
+  
+  // Créer le service AI avec la clé fournie
+  req.aiService = new AIService(apiKey, req.aiApiType);
   
   next();
 };
