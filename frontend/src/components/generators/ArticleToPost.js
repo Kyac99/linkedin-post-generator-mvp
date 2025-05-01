@@ -63,30 +63,50 @@ const ArticleToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
     setIsGenerating(true);
     
     try {
-      // Créer les headers avec la clé API
-      const headers = new Headers();
-      headers.append('Content-Type', 'application/json');
-      headers.append('aiApiKey', apiKey);
-      headers.append('aiApiType', apiType);
+      // Double approche : envoyer la clé API à la fois dans les en-têtes et dans le corps
+      // Créer les en-têtes avec la clé API
+      const headers = new Headers({
+        'Content-Type': 'application/json',
+        'aiApiKey': apiKey,
+        'aiApiType': apiType,
+        // Autres formats possibles que certains serveurs pourraient reconnaître
+        'X-AI-API-KEY': apiKey,
+        'X-AI-API-TYPE': apiType,
+        'x-ai-api-key': apiKey,
+        'x-ai-api-type': apiType
+      });
 
-      // Appel à l'API pour générer le post
+      // Appel à l'API pour générer le post, en incluant aussi la clé API dans le corps
       const response = await fetch('/api/generate/article-to-post', {
         method: 'POST',
         headers: headers,
         body: JSON.stringify({
+          // Paramètres standard
           article: articleInput,
           inputType: inputType,
-          tone: selectedTone
+          tone: selectedTone,
+          // Inclure également les clés API dans le corps comme solution de secours
+          aiApiKey: apiKey,
+          aiApiType: apiType
         }),
       });
 
+      // Tenter de lire la réponse JSON
+      let data;
+      try {
+        data = await response.json();
+      } catch (jsonError) {
+        console.error('Erreur lors de la lecture de la réponse JSON:', jsonError);
+        throw new Error('Réponse invalide du serveur');
+      }
+
       // Vérifier si la réponse est OK
       if (!response.ok) {
-        const data = await response.json();
+        // Si nous avons reçu un message d'erreur du serveur, l'utiliser
         throw new Error(data.message || `Erreur ${response.status}: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      // Si tout est bon, on a notre post généré
       onPostGenerated(data.generatedPost);
     } catch (error) {
       console.error('Generation error:', error);
