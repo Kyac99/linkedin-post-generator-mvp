@@ -82,39 +82,77 @@ router.post('/linkedin/callback', async (req, res) => {
 // Vérifier la validité d'une clé API IA (Claude/OpenAI)
 router.post('/verify-ai-key', async (req, res) => {
   try {
+    console.log('Traitement de la demande de vérification de clé API');
+    
     const { apiKey, keyType } = req.body;
     
     if (!apiKey) {
-      return res.status(400).json({ message: 'Clé API manquante' });
+      console.error('Aucune clé API fournie dans la requête');
+      return res.status(400).json({ 
+        message: 'Clé API manquante',
+        valid: false,
+        code: 'API_KEY_MISSING'
+      });
     }
     
     if (!['claude', 'openai'].includes(keyType)) {
-      return res.status(400).json({ message: 'Type de clé API non valide' });
+      console.error('Type de clé API non valide:', keyType);
+      return res.status(400).json({ 
+        message: 'Type de clé API non valide. Valeurs acceptées: claude, openai',
+        valid: false,
+        code: 'INVALID_API_TYPE'
+      });
     }
+
+    // Vérification rapide du format de la clé API
+    let formatWarning = null;
+    if (keyType === 'claude' && !apiKey.startsWith('sk-ant-')) {
+      formatWarning = 'Le format de la clé ne correspond pas au format standard Claude (sk-ant-...)';
+      console.warn(formatWarning);
+    } else if (keyType === 'openai' && !apiKey.startsWith('sk-')) {
+      formatWarning = 'Le format de la clé ne correspond pas au format standard OpenAI (sk-...)';
+      console.warn(formatWarning);
+    }
+    
+    // Journaliser de manière sécuritaire
+    const firstChars = apiKey.substring(0, 5);
+    const lastChars = apiKey.substring(apiKey.length - 3);
+    console.log(`Vérification de la clé API ${keyType}: ${firstChars}...${lastChars} (longueur: ${apiKey.length})`);
     
     // Initialiser le service AI avec la clé fournie
     const aiService = new AIService(apiKey, keyType);
     
+    // Mesurer le temps de vérification
+    const startTime = Date.now();
+    
     // Vérifier la validité de la clé
     const isValid = await aiService.verifyApiKey();
+    
+    const duration = Date.now() - startTime;
+    console.log(`Vérification terminée en ${duration}ms, résultat: ${isValid ? 'valide' : 'invalide'}`);
     
     if (isValid) {
       res.json({ 
         valid: true, 
         message: 'Clé API valide',
-        provider: keyType
+        provider: keyType,
+        formatWarning: formatWarning
       });
     } else {
       res.status(401).json({ 
         valid: false, 
-        message: 'Clé API invalide ou expirée' 
+        message: 'Clé API invalide ou expirée',
+        provider: keyType,
+        formatWarning: formatWarning
       });
     }
   } catch (error) {
     console.error('Erreur vérification clé API:', error);
     res.status(500).json({ 
       message: 'Erreur lors de la vérification de la clé API',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      valid: false,
+      code: 'VERIFICATION_ERROR'
     });
   }
 });
