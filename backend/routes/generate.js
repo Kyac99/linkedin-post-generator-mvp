@@ -3,91 +3,32 @@ const express = require('express');
 const router = express.Router();
 const AIService = require('../services/AIService');
 
-// Middleware pour extraire et vérifier la clé API
-const validateAIKey = (req, res, next) => {
-  // Journaliser tous les en-têtes reçus pour le débogage (en masquant les valeurs sensibles)
-  console.log('Tous les en-têtes reçus:');
-  const headers = Object.keys(req.headers).map(key => {
-    if (key.toLowerCase().includes('key') || key.toLowerCase().includes('auth') || key.toLowerCase().includes('token')) {
-      return `${key}: ***MASKED***`;
-    }
-    return `${key}: ${req.headers[key]}`;
-  });
-  console.log(headers.join('\n'));
-  
-  // On recherche la clé d'API sans tenir compte de la casse
-  let apiKey = null;
-  let apiType = null;
-  
-  // Chercher les en-têtes en ignorant la casse
-  for (const header in req.headers) {
-    if (header.toLowerCase() === 'aiapikey') {
-      apiKey = req.headers[header];
-    }
-    if (header.toLowerCase() === 'aiapitype') {
-      apiType = req.headers[header];
-    }
-  }
-  
-  console.log(`Vérification des en-têtes de requête pour l'API IA`);
-  console.log(`- 'aiApiType' trouvé: ${apiType || 'non défini'}`);
-  
-  // Journaliser la présence de la clé API de manière sécurisée
-  if (apiKey) {
-    const firstChars = apiKey.substring(0, 3);
-    const lastChars = apiKey.substring(apiKey.length - 3);
-    const length = apiKey.length;
-    console.log(`- 'aiApiKey' trouvé: Oui (format: ${firstChars}...${lastChars}, longueur: ${length})`);
-  } else {
-    console.error(`- 'aiApiKey' trouvé: Non`);
+// Middleware pour initialiser le service AI avec la configuration du fichier .env
+const initializeAIService = (req, res, next) => {
+  try {
+    // Obtenir le type d'API préféré depuis la requête (optionnel)
+    const preferredApiType = req.query.apiType || req.body.apiType;
     
-    // Vérifier si la clé est peut-être dans un autre en-tête ou dans le corps de la requête
-    console.log('Recherche alternative de la clé API...');
+    // Créer le service AI avec le type spécifié ou la valeur par défaut de .env
+    req.aiService = new AIService(preferredApiType);
     
-    // Vérifier dans le corps de la requête
-    if (req.body && req.body.aiApiKey) {
-      console.log('Clé API trouvée dans le corps de la requête');
-      apiKey = req.body.aiApiKey;
-      if (!apiType && req.body.aiApiType) {
-        apiType = req.body.aiApiType;
-      }
+    // Vérifier que le service a bien une clé API valide
+    if (!req.aiService.apiKey) {
+      return res.status(500).json({ 
+        message: 'Aucune clé API IA configurée sur le serveur. Veuillez configurer une clé API dans le fichier .env',
+        code: 'API_KEY_MISSING'
+      });
     }
-  }
-  
-  // Vérifier si une clé API est présente
-  if (!apiKey || apiKey.trim() === '') {
-    console.error('Aucune clé API trouvée dans les en-têtes ni le corps - Requête rejetée');
-    return res.status(401).json({ 
-      message: 'Clé API IA manquante. Veuillez configurer une clé API dans les paramètres.',
-      code: 'API_KEY_MISSING'
+    
+    next();
+  } catch (error) {
+    console.error('Erreur lors de l\'initialisation du service AI:', error);
+    res.status(500).json({ 
+      message: 'Erreur lors de l\'initialisation du service AI',
+      error: error.message,
+      code: 'SERVICE_INIT_ERROR'
     });
   }
-  
-  // Vérification rapide du format de la clé API
-  if (apiType === 'claude' && !apiKey.startsWith('sk-ant-')) {
-    console.warn('Format de clé Claude potentiellement invalide (ne commence pas par sk-ant-)');
-  } else if (apiType === 'openai' && !apiKey.startsWith('sk-')) {
-    console.warn('Format de clé OpenAI potentiellement invalide (ne commence pas par sk-)');
-  }
-  
-  // Déterminer le type d'API à utiliser
-  if (!['claude', 'openai'].includes(apiType)) {
-    req.aiApiType = process.env.DEFAULT_AI_PROVIDER || 'claude'; // Valeur par défaut
-    console.log(`Type d'API non spécifié ou invalide, utilisation de la valeur par défaut: ${req.aiApiType}`);
-  } else {
-    req.aiApiType = apiType;
-    console.log(`Type d'API spécifié: ${req.aiApiType}`);
-  }
-  
-  console.log(`Initialisation du service AI avec le type ${req.aiApiType}`);
-  
-  // Sauvegarder la clé API pour les routes
-  req.aiApiKey = apiKey;
-  
-  // Créer le service AI avec la clé fournie
-  req.aiService = new AIService(apiKey, req.aiApiType);
-  
-  next();
 };
 
 // Middleware de validation du ton
@@ -106,8 +47,8 @@ const validateTone = (req, res, next) => {
   next();
 };
 
-// Appliquer le middleware à toutes les routes
-router.use(validateAIKey);
+// Appliquer les middlewares à toutes les routes
+router.use(initializeAIService);
 router.use(validateTone);
 
 // Route pour générer un post à partir d'un article
@@ -134,6 +75,7 @@ router.post('/article-to-post', async (req, res) => {
     console.log(`Génération d'un post LinkedIn à partir d'un ${inputType === 'text' ? 'texte' : 'URL'}`);
     console.log(`- Ton: ${tone}`);
     console.log(`- Longueur de l'article: ${article.length} caractères`);
+    console.log(`- Service AI: ${req.aiService.apiType}`);
     
     const startTime = Date.now();
     const generatedPost = await req.aiService.generatePostFromArticle(article, inputType, tone);
@@ -147,7 +89,7 @@ router.post('/article-to-post', async (req, res) => {
         type: 'article',
         tone,
         inputType,
-        apiType: req.aiApiType,
+        apiType: req.aiService.apiType,
         processingTimeMs: duration,
         timestamp: new Date().toISOString()
       }
@@ -179,6 +121,7 @@ router.post('/idea-to-post', async (req, res) => {
     console.log(`Génération d'un post LinkedIn à partir d'une idée`);
     console.log(`- Ton: ${tone}`);
     console.log(`- Longueur de l'idée: ${idea.length} caractères`);
+    console.log(`- Service AI: ${req.aiService.apiType}`);
     
     const startTime = Date.now();
     const generatedPost = await req.aiService.generatePostFromIdea(idea, tone);
@@ -191,7 +134,7 @@ router.post('/idea-to-post', async (req, res) => {
       metadata: {
         type: 'idea',
         tone,
-        apiType: req.aiApiType,
+        apiType: req.aiService.apiType,
         processingTimeMs: duration,
         timestamp: new Date().toISOString()
       }
@@ -233,6 +176,7 @@ router.post('/youtube-to-post', async (req, res) => {
     console.log(`- URL: ${videoUrl}`);
     console.log(`- Ton: ${tone}`);
     console.log(`- Transcription fournie: ${transcription ? 'Oui' : 'Non'}`);
+    console.log(`- Service AI: ${req.aiService.apiType}`);
     
     const startTime = Date.now();
     const generatedPost = await req.aiService.generatePostFromYouTube(videoUrl, transcription, tone);
@@ -247,7 +191,7 @@ router.post('/youtube-to-post', async (req, res) => {
         videoUrl,
         tone,
         hasTranscription: !!transcription,
-        apiType: req.aiApiType,
+        apiType: req.aiService.apiType,
         processingTimeMs: duration,
         timestamp: new Date().toISOString()
       }
@@ -279,6 +223,7 @@ router.post('/python-to-post', async (req, res) => {
     console.log(`Génération d'un post LinkedIn à partir de code Python`);
     console.log(`- Ton: ${tone}`);
     console.log(`- Longueur du code: ${pythonCode.length} caractères`);
+    console.log(`- Service AI: ${req.aiService.apiType}`);
     
     const startTime = Date.now();
     const generatedPost = await req.aiService.generatePostFromPythonCode(pythonCode, tone);
@@ -292,7 +237,7 @@ router.post('/python-to-post', async (req, res) => {
         type: 'python',
         codeLength: pythonCode.length,
         tone,
-        apiType: req.aiApiType,
+        apiType: req.aiService.apiType,
         processingTimeMs: duration,
         timestamp: new Date().toISOString()
       }
@@ -307,29 +252,25 @@ router.post('/python-to-post', async (req, res) => {
   }
 });
 
-// Route pour vérifier la validité d'une clé API
-router.post('/verify-key', async (req, res) => {
+// Route pour vérifier l'état des API IA configurées
+router.get('/api-status', async (req, res) => {
   try {
-    console.log('Vérification de la validité de la clé API');
+    console.log('Vérification de l\'état des API IA configurées');
     
-    const startTime = Date.now();
-    const isValid = await req.aiService.verifyApiKey();
-    const duration = Date.now() - startTime;
+    const aiService = new AIService();
+    const status = await aiService.verifyApiKeys();
     
-    console.log(`Vérification terminée en ${duration}ms, résultat: ${isValid ? 'valide' : 'invalide'}`);
-    
-    res.json({ 
-      isValid,
-      apiType: req.aiApiType,
-      processingTimeMs: duration
+    res.json({
+      status,
+      defaultProvider: process.env.DEFAULT_AI_PROVIDER || 'claude',
+      timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Erreur de vérification de clé API:', error);
+    console.error('Erreur lors de la vérification de l\'état des API:', error);
     res.status(500).json({ 
-      message: 'Erreur lors de la vérification de la clé API',
+      message: 'Erreur lors de la vérification de l\'état des API',
       error: error.message,
-      isValid: false,
-      code: 'VERIFICATION_ERROR'
+      code: 'STATUS_CHECK_ERROR'
     });
   }
 });
