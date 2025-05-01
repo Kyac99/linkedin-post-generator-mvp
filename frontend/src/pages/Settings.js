@@ -3,25 +3,38 @@ import React, { useState, useEffect } from 'react';
 import './Settings.css';
 
 const Settings = () => {
-  const [aiApiKey, setAiApiKey] = useState('');
-  const [aiApiType, setAiApiType] = useState('claude');
   const [linkedInStatus, setLinkedInStatus] = useState('checking');
   const [notification, setNotification] = useState({ show: false, type: '', message: '' });
-  const [loading, setLoading] = useState(false);
-  const [isKeyConfigured, setIsKeyConfigured] = useState(false);
+  const [apiStatus, setApiStatus] = useState({
+    defaultProvider: 'claude',
+    claudeConfigured: false,
+    claudeValid: false,
+    openaiConfigured: false,
+    openaiValid: false
+  });
 
   useEffect(() => {
-    // Récupérer les informations stockées
-    const storedApiKey = localStorage.getItem('aiApiKey') || '';
-    const storedApiType = localStorage.getItem('aiApiType') || 'claude';
-    
-    setAiApiKey(storedApiKey);
-    setAiApiType(storedApiType);
-    setIsKeyConfigured(storedApiKey && storedApiKey.trim() !== '');
-    
     // Vérifier le statut de connexion LinkedIn
     checkLinkedInStatus();
+    
+    // Vérifier la configuration des API IA sur le serveur
+    checkApiConfiguration();
   }, []);
+
+  const checkApiConfiguration = async () => {
+    try {
+      const response = await fetch('/api/auth/api-config');
+      
+      if (response.ok) {
+        const config = await response.json();
+        setApiStatus(config);
+      } else {
+        console.error('Erreur lors de la récupération de la configuration API');
+      }
+    } catch (error) {
+      console.error('Erreur lors de la vérification de la configuration API:', error);
+    }
+  };
 
   const checkLinkedInStatus = async () => {
     try {
@@ -69,84 +82,6 @@ const Settings = () => {
     } catch (error) {
       console.error('LinkedIn status check error:', error);
       setLinkedInStatus('error');
-    }
-  };
-
-  const handleUpdateApiKey = async (e) => {
-    e.preventDefault();
-    
-    if (!aiApiKey.trim()) {
-      setNotification({
-        show: true,
-        type: 'error',
-        message: 'Veuillez entrer une clé API'
-      });
-      return;
-    }
-    
-    setLoading(true);
-    setNotification({ show: false });
-    
-    try {
-      console.log(`Tentative de mise à jour de la clé API ${aiApiType}:`, aiApiKey.substring(0, 5) + '...');
-      
-      // Vérifier la validité de la clé API
-      const response = await fetch('/api/auth/verify-ai-key', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          apiKey: aiApiKey,
-          keyType: aiApiType 
-        }),
-      });
-
-      const data = await response.json();
-      
-      if (response.ok) {
-        // Stocker la nouvelle clé API
-        localStorage.setItem('aiApiKey', aiApiKey);
-        localStorage.setItem('aiApiType', aiApiType);
-        setIsKeyConfigured(true);
-        
-        console.log(`Clé API ${aiApiType} mise à jour et stockée dans localStorage`);
-        
-        setNotification({
-          show: true,
-          type: 'success',
-          message: 'Clé API mise à jour avec succès'
-        });
-        
-        // Ajout d'un délai pour s'assurer que la mise à jour est bien prise en compte
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Un test rapide pour confirmer que la clé a bien été stockée
-        const storedKey = localStorage.getItem('aiApiKey');
-        console.log(`Clé stockée (vérification): ${storedKey ? storedKey.substring(0, 5) + '...' : 'non définie'}`);
-        
-        // Rafraîchir l'application après mise à jour de la clé API (optionnel)
-        if (window.location.pathname !== '/settings') {
-          window.location.reload();
-        }
-      } else {
-        throw new Error(data.message || 'Clé API invalide');
-      }
-    } catch (error) {
-      console.error('API key update error:', error);
-      setNotification({
-        show: true,
-        type: 'error',
-        message: `Erreur: ${error.message}`
-      });
-      setIsKeyConfigured(false);
-    } finally {
-      setLoading(false);
-      
-      // Masquer la notification après 3 secondes
-      setTimeout(() => {
-        setNotification({ show: false });
-      }, 5000);
     }
   };
 
@@ -207,20 +142,18 @@ const Settings = () => {
     }
   };
   
-  const clearApiKey = () => {
-    localStorage.removeItem('aiApiKey');
-    localStorage.removeItem('aiApiType');
-    setAiApiKey('');
-    setIsKeyConfigured(false);
-    setNotification({
-      show: true,
-      type: 'info',
-      message: 'Clé API supprimée'
-    });
-    
-    setTimeout(() => {
-      setNotification({ show: false });
-    }, 3000);
+  // Fonction d'aide pour obtenir le statut de l'API sous forme de texte
+  const getApiStatusText = (configured, valid) => {
+    if (!configured) return 'Non configurée';
+    if (valid) return 'Configurée et fonctionnelle';
+    return 'Configurée mais invalide';
+  };
+
+  // Fonction d'aide pour obtenir la classe CSS du statut de l'API
+  const getApiStatusClass = (configured, valid) => {
+    if (!configured) return 'status-not-configured';
+    if (valid) return 'status-valid';
+    return 'status-invalid';
   };
 
   return (
@@ -234,74 +167,29 @@ const Settings = () => {
       )}
       
       <div className="settings-card">
-        <h2>Configuration API IA</h2>
-        
-        {isKeyConfigured && (
-          <div className="key-status-indicator success">
-            <span className="status-dot"></span>
-            <span>Clé API {aiApiType === 'claude' ? 'Claude AI' : 'OpenAI'} configurée</span>
-          </div>
-        )}
-        
-        <form onSubmit={handleUpdateApiKey}>
-          <div className="form-group">
-            <label>Type d'API IA:</label>
-            <div className="api-type-selector">
-              <button 
-                type="button"
-                className={aiApiType === 'claude' ? 'active' : ''} 
-                onClick={() => setAiApiType('claude')}
-              >
-                Claude AI
-              </button>
-              <button 
-                type="button"
-                className={aiApiType === 'openai' ? 'active' : ''} 
-                onClick={() => setAiApiType('openai')}
-              >
-                OpenAI
-              </button>
-            </div>
+        <h2>Statut des API IA</h2>
+        <div className="api-status-container">
+          <div className={`api-status-item ${getApiStatusClass(apiStatus.claudeConfigured, apiStatus.claudeValid)}`}>
+            <span className="api-name">Claude AI:</span>
+            <span className="api-status">{getApiStatusText(apiStatus.claudeConfigured, apiStatus.claudeValid)}</span>
           </div>
           
-          <div className="form-group">
-            <label>Clé API {aiApiType === 'claude' ? 'Claude AI' : 'OpenAI'}:</label>
-            <div className="api-key-input-group">
-              <input
-                type="password"
-                value={aiApiKey}
-                onChange={(e) => setAiApiKey(e.target.value)}
-                placeholder={`Entrez votre clé API ${aiApiType === 'claude' ? 'Claude AI' : 'OpenAI'}`}
-              />
-              {isKeyConfigured && (
-                <button 
-                  type="button" 
-                  className="clear-button"
-                  onClick={clearApiKey}
-                >
-                  ×
-                </button>
-              )}
-            </div>
+          <div className={`api-status-item ${getApiStatusClass(apiStatus.openaiConfigured, apiStatus.openaiValid)}`}>
+            <span className="api-name">OpenAI:</span>
+            <span className="api-status">{getApiStatusText(apiStatus.openaiConfigured, apiStatus.openaiValid)}</span>
           </div>
           
-          <button 
-            type="submit" 
-            className="update-button"
-            disabled={loading}
-          >
-            {loading ? 'Mise à jour...' : 'Mettre à jour la clé API'}
-          </button>
-        </form>
+          <div className="api-provider-default">
+            <span>Fournisseur par défaut:</span>
+            <span className="default-provider">{apiStatus.defaultProvider === 'claude' ? 'Claude AI' : 'OpenAI'}</span>
+          </div>
+        </div>
         
-        <div className="api-key-help">
+        <div className="api-status-info">
           <p>
-            <strong>Comment obtenir une clé API:</strong>
+            Les clés API sont configurées directement sur le serveur par l'administrateur. 
+            Si vous rencontrez des problèmes avec la génération de contenu, veuillez contacter l'administrateur.
           </p>
-          <ul>
-            <li>Pour Claude AI, visitez <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer">console.anthropic.com</a></li>
-            <li>Pour OpenAI, visitez <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">platform.openai.com/api-keys</a></li>
-          </ul>
         </div>
       </div>
       
