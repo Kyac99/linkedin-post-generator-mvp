@@ -7,11 +7,21 @@ const ArticleToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
   const [inputType, setInputType] = useState('text'); // 'text' ou 'url'
   const [error, setError] = useState('');
   const [isApiKeyConfigured, setIsApiKeyConfigured] = useState(false);
+  const [debugInfo, setDebugInfo] = useState({ checked: false });
 
   // Vérifier si une clé API est configurée au chargement du composant
   useEffect(() => {
     const checkApiKey = () => {
       const apiKey = localStorage.getItem('aiApiKey');
+      const apiType = localStorage.getItem('aiApiType') || 'claude';
+      
+      setDebugInfo({ 
+        checked: true, 
+        apiKeyExists: !!apiKey && apiKey.trim() !== '',
+        apiKeyLength: apiKey ? apiKey.length : 0,
+        apiType: apiType
+      });
+      
       if (apiKey && apiKey.trim() !== '') {
         setIsApiKeyConfigured(true);
         setError('');
@@ -45,20 +55,24 @@ const ArticleToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
       return;
     }
     
-    console.log(`Utilisation de la clé API ${apiType}:`, apiKey.substring(0, 5) + '...');
+    // Log à des fins de débogage
+    console.log(`Utilisation de la clé API ${apiType} (longueur: ${apiKey.length} caractères)`);
+    console.log(`Premier et derniers caractères: ${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}`);
     
     setError('');
     setIsGenerating(true);
     
     try {
+      // Créer les headers avec la clé API
+      const headers = new Headers();
+      headers.append('Content-Type', 'application/json');
+      headers.append('aiApiKey', apiKey);
+      headers.append('aiApiType', apiType);
+
       // Appel à l'API pour générer le post
       const response = await fetch('/api/generate/article-to-post', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'aiApiKey': apiKey,
-          'aiApiType': apiType,
-        },
+        headers: headers,
         body: JSON.stringify({
           article: articleInput,
           inputType: inputType,
@@ -66,12 +80,13 @@ const ArticleToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
         }),
       });
 
-      const data = await response.json();
-      
+      // Vérifier si la réponse est OK
       if (!response.ok) {
-        throw new Error(data.message || 'Erreur lors de la génération du post');
+        const data = await response.json();
+        throw new Error(data.message || `Erreur ${response.status}: ${response.statusText}`);
       }
-      
+
+      const data = await response.json();
       onPostGenerated(data.generatedPost);
     } catch (error) {
       console.error('Generation error:', error);
@@ -88,6 +103,14 @@ const ArticleToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
       {!isApiKeyConfigured && (
         <div className="api-key-warning">
           <p>⚠️ Aucune clé API n'est configurée. Veuillez configurer une clé API dans les <a href="/settings">paramètres</a>.</p>
+          {debugInfo.checked && (
+            <details className="debug-info">
+              <summary>Information de débogage</summary>
+              <pre>
+                {JSON.stringify(debugInfo, null, 2)}
+              </pre>
+            </details>
+          )}
         </div>
       )}
       
