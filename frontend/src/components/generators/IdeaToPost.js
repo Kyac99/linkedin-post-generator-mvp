@@ -1,30 +1,10 @@
 // frontend/src/components/generators/IdeaToPost.js
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './GeneratorStyles.css';
 
 const IdeaToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
   const [ideaInput, setIdeaInput] = useState('');
   const [error, setError] = useState('');
-  const [isApiKeyConfigured, setIsApiKeyConfigured] = useState(false);
-
-  // Vérifier si une clé API est configurée au chargement du composant
-  useEffect(() => {
-    const checkApiKey = () => {
-      const apiKey = localStorage.getItem('aiApiKey');
-      if (apiKey && apiKey.trim() !== '') {
-        setIsApiKeyConfigured(true);
-      } else {
-        setIsApiKeyConfigured(false);
-        setError('Veuillez configurer une clé API dans les paramètres');
-      }
-    };
-
-    checkApiKey();
-    // Vérifier à nouveau la clé API toutes les 5 secondes au cas où l'utilisateur la configure dans un autre onglet
-    const interval = setInterval(checkApiKey, 5000);
-    
-    return () => clearInterval(interval);
-  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,28 +14,15 @@ const IdeaToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
       return;
     }
     
-    // Vérifier à nouveau si une clé API est configurée
-    const apiKey = localStorage.getItem('aiApiKey');
-    const apiType = localStorage.getItem('aiApiType') || 'claude';
-    
-    if (!apiKey || apiKey.trim() === '') {
-      setError('Veuillez configurer une clé API dans les paramètres');
-      return;
-    }
-    
-    console.log(`Utilisation de la clé API ${apiType}:`, apiKey.substring(0, 5) + '...');
-    
     setError('');
     setIsGenerating(true);
     
     try {
-      // Appel à l'API pour générer le post
+      // Appel à l'API pour générer le post (le serveur utilisera sa propre clé API)
       const response = await fetch('/api/generate/idea-to-post', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'aiApiKey': apiKey,
-          'aiApiType': apiType,
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           idea: ideaInput,
@@ -63,12 +30,13 @@ const IdeaToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
         }),
       });
 
-      const data = await response.json();
-      
+      // Vérifier si la réponse est OK
       if (!response.ok) {
-        throw new Error(data.message || 'Erreur lors de la génération du post');
+        const data = await response.json();
+        throw new Error(data.message || `Erreur ${response.status}: ${response.statusText}`);
       }
-      
+
+      const data = await response.json();
       onPostGenerated(data.generatedPost);
     } catch (error) {
       console.error('Generation error:', error);
@@ -81,12 +49,6 @@ const IdeaToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
   return (
     <div className="generator-container">
       <h2>Idée de Post LinkedIn</h2>
-      
-      {!isApiKeyConfigured && (
-        <div className="api-key-warning">
-          <p>⚠️ Aucune clé API n'est configurée. Veuillez configurer une clé API dans les <a href="/settings">paramètres</a>.</p>
-        </div>
-      )}
       
       <form onSubmit={handleSubmit}>
         <textarea
@@ -102,7 +64,6 @@ const IdeaToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
         <button 
           type="submit" 
           className="generate-button"
-          disabled={!isApiKeyConfigured}
         >
           Générer un post {selectedTone && `(Ton: ${selectedTone})`}
         </button>
