@@ -1,42 +1,11 @@
 // frontend/src/components/generators/ArticleToPost.js
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './GeneratorStyles.css';
 
 const ArticleToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
   const [articleInput, setArticleInput] = useState('');
   const [inputType, setInputType] = useState('text'); // 'text' ou 'url'
   const [error, setError] = useState('');
-  const [isApiKeyConfigured, setIsApiKeyConfigured] = useState(false);
-  const [debugInfo, setDebugInfo] = useState({ checked: false });
-
-  // Vérifier si une clé API est configurée au chargement du composant
-  useEffect(() => {
-    const checkApiKey = () => {
-      const apiKey = localStorage.getItem('aiApiKey');
-      const apiType = localStorage.getItem('aiApiType') || 'claude';
-      
-      setDebugInfo({ 
-        checked: true, 
-        apiKeyExists: !!apiKey && apiKey.trim() !== '',
-        apiKeyLength: apiKey ? apiKey.length : 0,
-        apiType: apiType
-      });
-      
-      if (apiKey && apiKey.trim() !== '') {
-        setIsApiKeyConfigured(true);
-        setError('');
-      } else {
-        setIsApiKeyConfigured(false);
-        setError('Veuillez configurer une clé API dans les paramètres');
-      }
-    };
-
-    checkApiKey();
-    // Vérifier à nouveau la clé API toutes les 5 secondes au cas où l'utilisateur la configure dans un autre onglet
-    const interval = setInterval(checkApiKey, 5000);
-    
-    return () => clearInterval(interval);
-  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -46,48 +15,20 @@ const ArticleToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
       return;
     }
     
-    // Vérifier à nouveau si une clé API est configurée
-    const apiKey = localStorage.getItem('aiApiKey');
-    const apiType = localStorage.getItem('aiApiType') || 'claude';
-    
-    if (!apiKey || apiKey.trim() === '') {
-      setError('Veuillez configurer une clé API dans les paramètres');
-      return;
-    }
-    
-    // Log à des fins de débogage
-    console.log(`Utilisation de la clé API ${apiType} (longueur: ${apiKey.length} caractères)`);
-    console.log(`Premier et derniers caractères: ${apiKey.substring(0, 4)}...${apiKey.substring(apiKey.length - 4)}`);
-    
     setError('');
     setIsGenerating(true);
     
     try {
-      // Double approche : envoyer la clé API à la fois dans les en-têtes et dans le corps
-      // Créer les en-têtes avec la clé API
-      const headers = new Headers({
-        'Content-Type': 'application/json',
-        'aiApiKey': apiKey,
-        'aiApiType': apiType,
-        // Autres formats possibles que certains serveurs pourraient reconnaître
-        'X-AI-API-KEY': apiKey,
-        'X-AI-API-TYPE': apiType,
-        'x-ai-api-key': apiKey,
-        'x-ai-api-type': apiType
-      });
-
-      // Appel à l'API pour générer le post, en incluant aussi la clé API dans le corps
+      // Appel à l'API pour générer le post (le serveur utilisera sa propre clé API)
       const response = await fetch('/api/generate/article-to-post', {
         method: 'POST',
-        headers: headers,
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
-          // Paramètres standard
           article: articleInput,
           inputType: inputType,
-          tone: selectedTone,
-          // Inclure également les clés API dans le corps comme solution de secours
-          aiApiKey: apiKey,
-          aiApiType: apiType
+          tone: selectedTone
         }),
       });
 
@@ -119,20 +60,6 @@ const ArticleToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
   return (
     <div className="generator-container">
       <h2>Article vers Post LinkedIn</h2>
-      
-      {!isApiKeyConfigured && (
-        <div className="api-key-warning">
-          <p>⚠️ Aucune clé API n'est configurée. Veuillez configurer une clé API dans les <a href="/settings">paramètres</a>.</p>
-          {debugInfo.checked && (
-            <details className="debug-info">
-              <summary>Information de débogage</summary>
-              <pre>
-                {JSON.stringify(debugInfo, null, 2)}
-              </pre>
-            </details>
-          )}
-        </div>
-      )}
       
       <div className="input-type-selector">
         <button 
@@ -175,7 +102,6 @@ const ArticleToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
         <button 
           type="submit" 
           className="generate-button"
-          disabled={!isApiKeyConfigured}
         >
           Générer un post {selectedTone && `(Ton: ${selectedTone})`}
         </button>
