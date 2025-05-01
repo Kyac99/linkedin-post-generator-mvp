@@ -1,21 +1,32 @@
 // backend/services/AIService.js
 const axios = require('axios');
 const { JSDOM } = require('jsdom');
+require('dotenv').config();
 
 class AIService {
-  constructor(apiKey, apiType = 'claude') {
-    // N'utiliser que la clé API fournie explicitement, pas celle du .env
-    this.apiKey = apiKey;
-    this.apiType = apiType;
+  constructor(apiType = null) {
+    // Utiliser le type d'API spécifié ou la valeur par défaut de .env
+    this.apiType = apiType || process.env.DEFAULT_AI_PROVIDER || 'claude';
     
-    // Vérifier si la clé API est valide et la journaliser
+    // Obtenir la clé API à partir des variables d'environnement
+    if (this.apiType === 'claude') {
+      this.apiKey = process.env.CLAUDE_API_KEY;
+    } else if (this.apiType === 'openai') {
+      this.apiKey = process.env.OPENAI_API_KEY;
+    } else {
+      // Par défaut, utiliser Claude si le type n'est pas reconnu
+      this.apiType = 'claude';
+      this.apiKey = process.env.CLAUDE_API_KEY;
+    }
+    
+    // Vérifier si la clé API est valide
     if (!this.apiKey) {
-      console.warn(`⚠️ Clé API ${this.apiType} non fournie`);
+      console.warn(`⚠️ Clé API ${this.apiType} non trouvée dans les variables d'environnement`);
     } else {
       // Pour des raisons de sécurité, ne jamais afficher la clé complète dans les logs
       const firstChars = this.apiKey.substring(0, 4);
       const lastChars = this.apiKey.substring(this.apiKey.length - 4);
-      console.log(`✅ Clé API ${this.apiType} reçue: ${firstChars}...${lastChars} (longueur: ${this.apiKey.length} caractères)`);
+      console.log(`✅ Clé API ${this.apiType} trouvée: ${firstChars}...${lastChars} (longueur: ${this.apiKey.length} caractères)`);
       
       // Vérifier si la clé a le bon format en fonction du type d'API
       if (this.apiType === 'claude' && !this.apiKey.startsWith('sk-ant-')) {
@@ -327,7 +338,7 @@ class AIService {
    */
   async callAIApi(prompt) {
     if (!this.apiKey) {
-      throw new Error('Clé API IA manquante. Veuillez configurer une clé API dans les paramètres.');
+      throw new Error('Clé API IA manquante. Veuillez configurer la clé API dans le fichier .env');
     }
     
     if (this.apiType === 'claude') {
@@ -435,7 +446,7 @@ class AIService {
         
         // Erreur d'authentification
         if (error.response.status === 401) {
-          throw new Error('Clé API Claude invalide ou expirée. Veuillez vérifier votre clé API.');
+          throw new Error('Clé API Claude invalide ou expirée. Veuillez vérifier votre clé API dans le fichier .env');
         }
         
         // Erreur de quota
@@ -570,7 +581,7 @@ class AIService {
         
         // Erreur d'authentification
         if (error.response?.status === 401) {
-          throw new Error('Clé API OpenAI invalide ou expirée. Veuillez vérifier votre clé API.');
+          throw new Error('Clé API OpenAI invalide ou expirée. Veuillez vérifier votre clé API dans le fichier .env');
         }
         
         // Message d'erreur spécifique si disponible
@@ -587,78 +598,45 @@ class AIService {
   }
 
   /**
-   * Vérifie la validité d'une clé API
+   * Vérifie la validité des clés API configurées dans le fichier .env
    */
-  async verifyApiKey() {
-    // Vérifier si une clé API est fournie
-    if (!this.apiKey) {
-      return false;
+  async verifyApiKeys() {
+    const results = {
+      claude: {
+        configured: !!process.env.CLAUDE_API_KEY,
+        valid: false,
+        error: null
+      },
+      openai: {
+        configured: !!process.env.OPENAI_API_KEY,
+        valid: false,
+        error: null
+      }
+    };
+    
+    // Vérifier la clé Claude si configurée
+    if (results.claude.configured) {
+      try {
+        const claudeService = new AIService('claude');
+        const response = await claudeService.callClaudeApi('Réponds simplement "OK" pour vérifier que l\'API fonctionne.');
+        results.claude.valid = !!response;
+      } catch (error) {
+        results.claude.error = error.message;
+      }
     }
     
-    try {
-      console.log(`Vérification de la clé API ${this.apiType}...`);
-      
-      if (this.apiType === 'claude') {
-        // Un simple appel d'API pour vérifier la validité de la clé
-        const response = await axios.post(
-          'https://api.anthropic.com/v1/messages',
-          {
-            model: 'claude-3-haiku-20240307',
-            max_tokens: 10,
-            messages: [
-              { role: 'user', content: 'Réponds simplement "OK" pour vérifier que l\'API fonctionne.' }
-            ]
-          },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'x-api-key': this.apiKey,
-              'anthropic-version': '2023-06-01'
-            },
-            timeout: 10000
-          }
-        );
-        
-        console.log("Statut de la vérification Claude:", response.status);
-        return response.status === 200;
-      } else if (this.apiType === 'openai') {
-        const response = await axios.post(
-          'https://api.openai.com/v1/chat/completions',
-          {
-            model: 'gpt-3.5-turbo',
-            messages: [
-              { role: 'user', content: 'Réponds simplement "OK" pour vérifier que l\'API fonctionne.' }
-            ],
-            max_tokens: 10
-          },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${this.apiKey}`
-            },
-            timeout: 10000
-          }
-        );
-        
-        console.log("Statut de la vérification OpenAI:", response.status);
-        return response.status === 200;
+    // Vérifier la clé OpenAI si configurée
+    if (results.openai.configured) {
+      try {
+        const openaiService = new AIService('openai');
+        const response = await openaiService.callOpenAIApi('Réponds simplement "OK" pour vérifier que l\'API fonctionne.');
+        results.openai.valid = !!response;
+      } catch (error) {
+        results.openai.error = error.message;
       }
-      
-      return false;
-    } catch (error) {
-      console.error(`Erreur de vérification de la clé API ${this.apiType}:`, error.message);
-      
-      // Journaliser les détails de l'erreur pour le débogage
-      if (error.response) {
-        console.error('Détails de l\'erreur:', {
-          status: error.response.status,
-          statusText: error.response.statusText,
-          data: error.response.data
-        });
-      }
-      
-      return false;
     }
+    
+    return results;
   }
 }
 
