@@ -1,11 +1,32 @@
 // frontend/src/components/generators/ArticleToPost.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './GeneratorStyles.css';
 
 const ArticleToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
   const [articleInput, setArticleInput] = useState('');
   const [inputType, setInputType] = useState('text'); // 'text' ou 'url'
   const [error, setError] = useState('');
+  const [isApiKeyConfigured, setIsApiKeyConfigured] = useState(false);
+
+  // Vérifier si une clé API est configurée au chargement du composant
+  useEffect(() => {
+    const checkApiKey = () => {
+      const apiKey = localStorage.getItem('aiApiKey');
+      if (apiKey && apiKey.trim() !== '') {
+        setIsApiKeyConfigured(true);
+        setError('');
+      } else {
+        setIsApiKeyConfigured(false);
+        setError('Veuillez configurer une clé API dans les paramètres');
+      }
+    };
+
+    checkApiKey();
+    // Vérifier à nouveau la clé API toutes les 5 secondes au cas où l'utilisateur la configure dans un autre onglet
+    const interval = setInterval(checkApiKey, 5000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -15,7 +36,7 @@ const ArticleToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
       return;
     }
     
-    // Vérifier si une clé API est configurée
+    // Vérifier à nouveau si une clé API est configurée
     const apiKey = localStorage.getItem('aiApiKey');
     const apiType = localStorage.getItem('aiApiType') || 'claude';
     
@@ -64,6 +85,12 @@ const ArticleToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
     <div className="generator-container">
       <h2>Article vers Post LinkedIn</h2>
       
+      {!isApiKeyConfigured && (
+        <div className="api-key-warning">
+          <p>⚠️ Aucune clé API n'est configurée. Veuillez configurer une clé API dans les <a href="/settings">paramètres</a>.</p>
+        </div>
+      )}
+      
       <div className="input-type-selector">
         <button 
           className={inputType === 'text' ? 'active' : ''} 
@@ -102,7 +129,11 @@ const ArticleToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
         
         {error && <p className="error-message">{error}</p>}
         
-        <button type="submit" className="generate-button">
+        <button 
+          type="submit" 
+          className="generate-button"
+          disabled={!isApiKeyConfigured}
+        >
           Générer un post {selectedTone && `(Ton: ${selectedTone})`}
         </button>
       </form>
