@@ -1,10 +1,31 @@
 // frontend/src/components/generators/PythonToPost.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './GeneratorStyles.css';
 
 const PythonToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
   const [pythonCode, setPythonCode] = useState('');
   const [error, setError] = useState('');
+  const [isApiKeyConfigured, setIsApiKeyConfigured] = useState(false);
+
+  // Vérifier si une clé API est configurée au chargement du composant
+  useEffect(() => {
+    const checkApiKey = () => {
+      const apiKey = localStorage.getItem('aiApiKey');
+      if (apiKey && apiKey.trim() !== '') {
+        setIsApiKeyConfigured(true);
+        setError('');
+      } else {
+        setIsApiKeyConfigured(false);
+        setError('Veuillez configurer une clé API dans les paramètres');
+      }
+    };
+
+    checkApiKey();
+    // Vérifier à nouveau la clé API toutes les 5 secondes au cas où l'utilisateur la configure dans un autre onglet
+    const interval = setInterval(checkApiKey, 5000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -13,6 +34,17 @@ const PythonToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
       setError('Veuillez entrer du code Python');
       return;
     }
+    
+    // Vérifier à nouveau si une clé API est configurée
+    const apiKey = localStorage.getItem('aiApiKey');
+    const apiType = localStorage.getItem('aiApiType') || 'claude';
+    
+    if (!apiKey || apiKey.trim() === '') {
+      setError('Veuillez configurer une clé API dans les paramètres');
+      return;
+    }
+    
+    console.log(`Utilisation de la clé API ${apiType}:`, apiKey.substring(0, 5) + '...');
     
     setError('');
     setIsGenerating(true);
@@ -23,8 +55,8 @@ const PythonToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'aiApiKey': localStorage.getItem('aiApiKey'),
-          'aiApiType': localStorage.getItem('aiApiType') || 'claude',
+          'aiApiKey': apiKey,
+          'aiApiType': apiType,
         },
         body: JSON.stringify({ 
           pythonCode,
@@ -51,6 +83,12 @@ const PythonToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
     <div className="generator-container">
       <h2>Code Python vers Post LinkedIn</h2>
       
+      {!isApiKeyConfigured && (
+        <div className="api-key-warning">
+          <p>⚠️ Aucune clé API n'est configurée. Veuillez configurer une clé API dans les <a href="/settings">paramètres</a>.</p>
+        </div>
+      )}
+      
       <form onSubmit={handleSubmit}>
         <textarea
           className="input-field code-input"
@@ -63,7 +101,11 @@ const PythonToPost = ({ onPostGenerated, setIsGenerating, selectedTone }) => {
         
         {error && <p className="error-message">{error}</p>}
         
-        <button type="submit" className="generate-button">
+        <button 
+          type="submit" 
+          className="generate-button"
+          disabled={!isApiKeyConfigured}
+        >
           Générer un post {selectedTone && `(Ton: ${selectedTone})`}
         </button>
       </form>
