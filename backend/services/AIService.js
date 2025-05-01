@@ -140,7 +140,7 @@ class AIService {
    * @param {string} url - L'URL YouTube
    */
   extractYouTubeId(url) {
-    const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+    const regExp = /^.*((youtu.be\/)|(v\/)|(\/?u\/\w\/)|(embed\/)|(watch\?))??v?=?([^#&?]*).*/;
     const match = url.match(regExp);
     return (match && match[7].length === 11) ? match[7] : null;
   }
@@ -335,11 +335,13 @@ class AIService {
    */
   async callClaudeApi(prompt) {
     try {
-      // Utiliser le modèle Claude 3.5 Sonnet pour de meilleurs résultats
+      console.log('Appel à l\'API Claude...');
+      
+      // Utiliser le modèle Claude 3 Haiku - modèle le plus récent et fiable
       const response = await axios.post(
         'https://api.anthropic.com/v1/messages',
         {
-          model: 'claude-3-5-sonnet-20240620',
+          model: 'claude-3-haiku-20240307',  // Modèle stable et disponible
           max_tokens: 1024,
           messages: [
             { role: 'user', content: prompt }
@@ -350,45 +352,46 @@ class AIService {
             'Content-Type': 'application/json',
             'x-api-key': this.apiKey,
             'anthropic-version': '2023-06-01'
-          }
+          },
+          timeout: 30000 // 30 secondes de timeout
         }
       );
 
       // Extraire la réponse générée
-      return response.data.content[0].text;
+      if (response.data && response.data.content && response.data.content.length > 0) {
+        return response.data.content[0].text;
+      } else {
+        throw new Error('Format de réponse inattendu de Claude AI');
+      }
     } catch (error) {
-      console.error('Erreur lors de l\'appel à l\'API Claude:', error.response?.data || error.message);
+      console.error('Erreur lors de l\'appel à l\'API Claude:', error);
       
-      // Fallback sur un modèle plus léger si nécessaire
-      if (error.response?.status === 400 && error.response?.data?.error?.type === 'invalid_request_error') {
-        try {
-          console.log('Tentative avec Claude 3 Haiku...');
-          const fallbackResponse = await axios.post(
-            'https://api.anthropic.com/v1/messages',
-            {
-              model: 'claude-3-haiku-20240307',
-              max_tokens: 1024,
-              messages: [
-                { role: 'user', content: prompt }
-              ]
-            },
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': this.apiKey,
-                'anthropic-version': '2023-06-01'
-              }
-            }
-          );
-          
-          return fallbackResponse.data.content[0].text;
-        } catch (fallbackError) {
-          console.error('Erreur avec le modèle de fallback:', fallbackError);
-          throw new Error('Erreur lors de la génération du post avec Claude AI');
+      // Afficher des détails plus spécifiques sur l'erreur pour le débogage
+      if (error.response) {
+        console.error('Détails de la réponse d\'erreur:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data
+        });
+        
+        // Erreur d'authentification
+        if (error.response.status === 401) {
+          throw new Error('Clé API Claude invalide ou expirée. Veuillez vérifier votre clé API.');
+        }
+        
+        // Erreur de quota
+        if (error.response.status === 429) {
+          throw new Error('Quota d\'API Claude dépassé. Veuillez réessayer plus tard.');
+        }
+        
+        // Autres erreurs avec message spécifique de l'API
+        if (error.response.data && error.response.data.error && error.response.data.error.message) {
+          throw new Error(`Erreur Claude API: ${error.response.data.error.message}`);
         }
       }
       
-      throw new Error('Erreur lors de la génération du post avec Claude AI');
+      // Erreur générique en dernier recours
+      throw new Error('Erreur lors de la génération du post avec Claude AI: ' + error.message);
     }
   }
 
@@ -403,10 +406,12 @@ class AIService {
 
     while (retries <= maxRetries) {
       try {
+        console.log('Appel à l\'API OpenAI...');
+        
         const response = await axios.post(
           'https://api.openai.com/v1/chat/completions',
           {
-            model: 'gpt-4o-2024-05-13',  // Utiliser un modèle avec version spécifique
+            model: 'gpt-4-turbo-preview',  // Modèle stable et performant
             messages: [
               { role: 'system', content: 'Vous êtes un expert en marketing de contenu pour LinkedIn.' },
               { role: 'user', content: prompt }
@@ -424,9 +429,22 @@ class AIService {
         );
 
         // Extraire la réponse générée
-        return response.data.choices[0].message.content;
+        if (response.data && response.data.choices && response.data.choices.length > 0) {
+          return response.data.choices[0].message.content;
+        } else {
+          throw new Error('Format de réponse inattendu de OpenAI');
+        }
       } catch (error) {
-        console.error(`Erreur lors de l'appel à l'API OpenAI (tentative ${retries + 1}/${maxRetries + 1}):`, error.response?.data || error.message);
+        console.error(`Erreur lors de l'appel à l'API OpenAI (tentative ${retries + 1}/${maxRetries + 1}):`, error);
+        
+        // Afficher des détails plus spécifiques sur l'erreur pour le débogage
+        if (error.response) {
+          console.error('Détails de la réponse d\'erreur:', {
+            status: error.response.status,
+            statusText: error.response.statusText,
+            data: error.response.data
+          });
+        }
         
         // Vérifier si l'erreur est récupérable (rate limit, timeout, etc.)
         const isRateLimitError = error.response?.status === 429;
@@ -473,9 +491,22 @@ class AIService {
           }
         }
         
-        throw new Error('Erreur lors de la génération du post avec OpenAI: ' + (error.response?.data?.error?.message || error.message));
+        // Erreur d'authentification
+        if (error.response?.status === 401) {
+          throw new Error('Clé API OpenAI invalide ou expirée. Veuillez vérifier votre clé API.');
+        }
+        
+        // Message d'erreur spécifique si disponible
+        if (error.response?.data?.error?.message) {
+          throw new Error('Erreur OpenAI API: ' + error.response.data.error.message);
+        }
+        
+        // Erreur générique en dernier recours
+        throw new Error('Erreur lors de la génération du post avec OpenAI: ' + error.message);
       }
     }
+    
+    throw new Error('Nombre maximum de tentatives atteint lors de l\'appel à l\'API OpenAI');
   }
 
   /**
@@ -488,15 +519,65 @@ class AIService {
     }
     
     try {
+      console.log(`Vérification de la clé API ${this.apiType}...`);
+      
       if (this.apiType === 'claude') {
         // Un simple appel d'API pour vérifier la validité de la clé
-        await this.callClaudeApi('Répondez simplement "OK" pour vérifier que l\'API fonctionne.');
+        const response = await axios.post(
+          'https://api.anthropic.com/v1/messages',
+          {
+            model: 'claude-3-haiku-20240307',
+            max_tokens: 10,
+            messages: [
+              { role: 'user', content: 'Réponds simplement "OK" pour vérifier que l\'API fonctionne.' }
+            ]
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'x-api-key': this.apiKey,
+              'anthropic-version': '2023-06-01'
+            },
+            timeout: 10000
+          }
+        );
+        
+        return response.status === 200;
       } else if (this.apiType === 'openai') {
-        await this.callOpenAIApi('Répondez simplement "OK" pour vérifier que l\'API fonctionne.');
+        const response = await axios.post(
+          'https://api.openai.com/v1/chat/completions',
+          {
+            model: 'gpt-3.5-turbo',
+            messages: [
+              { role: 'user', content: 'Réponds simplement "OK" pour vérifier que l\'API fonctionne.' }
+            ],
+            max_tokens: 10
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${this.apiKey}`
+            },
+            timeout: 10000
+          }
+        );
+        
+        return response.status === 200;
       }
-      return true;
+      
+      return false;
     } catch (error) {
-      console.error('Erreur de vérification de la clé API:', error);
+      console.error(`Erreur de vérification de la clé API ${this.apiType}:`, error.message);
+      
+      // Journaliser les détails de l'erreur pour le débogage
+      if (error.response) {
+        console.error('Détails de l\'erreur:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          data: error.response.data
+        });
+      }
+      
       return false;
     }
   }
