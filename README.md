@@ -21,10 +21,15 @@ Ce projet est un MVP (Minimum Viable Product) permettant de générer et publier
   - Édition du contenu généré
   - Compteur de caractères avec alertes
   - Ajout de liens optionnels avec titre et description
+  - Suggestions de hashtags populaires et contextuels
+  - Aide intelligente au contenu
 
-- **Publication**
+- **Publication et gestion**
   - Publication directe sur LinkedIn
   - Publication avec lien inclus
+  - Planification des publications à une date et heure futures
+  - Historique des publications avec statistiques d'engagement
+  - Gestion des posts planifiés
 
 ## Architecture technique
 
@@ -32,17 +37,21 @@ Ce projet est un MVP (Minimum Viable Product) permettant de générer et publier
   - React.js pour l'interface utilisateur
   - Système de routage pour la navigation
   - Gestion de l'état avec hooks React
+  - Interface responsive et intuitive
 
 - **Backend**
   - Node.js avec Express pour l'API
   - Intégration avec LinkedIn API
   - Intégration avec Claude AI / OpenAI
   - Support multi-modèle (Claude 3.5 Sonnet et GPT-4o)
+  - Système de planification des publications
+  - Stockage des données de posts et statistiques
 
 - **Sécurité**
   - Authentification OAuth pour LinkedIn
   - Stockage sécurisé des clés API
   - Vérification des tokens
+  - Gestion des erreurs robuste
 
 ## Configuration et déploiement
 
@@ -65,6 +74,7 @@ LINKEDIN_REDIRECT_URI=http://localhost:3000/login
 CLAUDE_API_KEY=votre_cle_api_claude
 OPENAI_API_KEY=votre_cle_api_openai
 DEFAULT_AI_PROVIDER=claude  # ou 'openai'
+DEBUG_LEVEL=none  # options: none, basic, verbose
 ```
 
 ### Installation
@@ -101,25 +111,47 @@ DEFAULT_AI_PROVIDER=claude  # ou 'openai'
 
 3. **Personnalisation et publication**
    - Modifiez le post généré si nécessaire
+   - Ajoutez des hashtags suggérés en fonction du contenu
    - Ajoutez éventuellement un lien avec titre et description
-   - Publiez directement sur votre profil LinkedIn
+   - Publiez directement sur votre profil LinkedIn ou planifiez pour plus tard
 
-## Améliorations futures (post-MVP)
+4. **Planification et suivi**
+   - Consultez vos posts planifiés dans l'onglet "Historique"
+   - Annulez ou modifiez les posts planifiés
+   - Visualisez les statistiques d'engagement des posts publiés
+
+## Améliorations futures
 
 - **Fonctionnalités**
-  - Planification des publications
   - Support d'images et de vidéos dans les posts
-  - Historique des publications et analytics
-  - Suggestions de hashtags populaires
   - Support de multiples comptes LinkedIn
   - Prévisualisation du rendu mobile
+  - Rapports analytiques avancés et export des données
+  - Suggestions de contenu basées sur les performances passées
+  - Intégration avec d'autres réseaux sociaux (Twitter, Facebook, etc.)
 
 - **Technique**
-  - Base de données pour stocker l'historique
-  - Système de files d'attente pour les publications planifiées
-  - Tests automatisés
+  - Migration vers une base de données robuste (MongoDB, PostgreSQL)
+  - Système de files d'attente avancé pour les publications planifiées
+  - Tests automatisés et couverture de code
   - CI/CD pour déploiement automatique
   - Support de LinkedIn Company Pages
+  - API publique pour intégrations tierces
+
+## Changelog
+
+### Version 1.1.0 (Mai 2025)
+- Ajout de la planification des posts
+- Ajout de l'historique des publications avec statistiques
+- Ajout de suggestions de hashtags intelligentes et contextuelles
+- Amélioration de l'interface utilisateur
+- Correction de bugs et optimisation des performances
+
+### Version 1.0.0 (Mars 2025)
+- Version initiale du MVP
+- Génération de posts à partir de différentes sources
+- Publication directe sur LinkedIn
+- Interface de base pour la génération et l'édition
 
 ## Licence
 

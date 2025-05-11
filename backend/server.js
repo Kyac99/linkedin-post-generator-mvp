@@ -12,6 +12,8 @@ const authRoutes = require('./routes/auth');
 const generateRoutes = require('./routes/generate');
 const linkedinRoutes = require('./routes/linkedin');
 const diagnosticRoutes = require('./routes/diagnostic');
+const historyRoutes = require('./routes/history');
+const hashtagsRoutes = require('./routes/hashtags');
 
 // Vérifier que les variables d'environnement critiques sont définies
 console.log('Configuration de l\'environnement:');
@@ -54,6 +56,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/generate', generateRoutes);
 app.use('/api/linkedin', linkedinRoutes);
 app.use('/api/diagnostic', diagnosticRoutes);
+app.use('/api/history', historyRoutes);
+app.use('/api/hashtags', hashtagsRoutes);
 
 // Route de diagnostic pour vérifier que le serveur fonctionne correctement
 app.get('/api/health', (req, res) => {
@@ -64,6 +68,13 @@ app.get('/api/health', (req, res) => {
     time: new Date().toISOString()
   });
 });
+
+// Créer le dossier data s'il n'existe pas (pour le stockage des données)
+const dataDir = path.join(__dirname, 'data');
+if (!require('fs').existsSync(dataDir)) {
+  require('fs').mkdirSync(dataDir, { recursive: true });
+  console.log('Dossier data créé pour le stockage des données');
+}
 
 // Servir l'application React en production
 if (process.env.NODE_ENV === 'production') {

@@ -1,0 +1,161 @@
+/* frontend/src/components/HashtagSuggestions.css */
+.hashtag-suggestions {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 20px;
+  border: 1px solid #e0e0e0;
+}
+
+.hashtag-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.hashtag-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.auto-suggestion-badge {
+  background-color: #2196f3;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 10px;
+  text-transform: uppercase;
+}
+
+.categories-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 15px;
+  max-height: 80px;
+  overflow-y: auto;
+}
+
+.category-button {
+  background-color: #f0f0f0;
+  border: none;
+  border-radius: 15px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.category-button:hover {
+  background-color: #e0e0e0;
+}
+
+.category-button.active {
+  background-color: #0077b5;
+  color: white;
+}
+
+.suggestion-error {
+  background-color: #ffebee;
+  color: #d32f2f;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  margin-bottom: 15px;
+}
+
+.hashtags-container {
+  min-height: 100px;
+  position: relative;
+}
+
+.hashtags-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.hashtag-button {
+  position: relative;
+  background-color: white;
+  border: 1px solid #0077b5;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 0.9rem;
+  color: #0077b5;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.hashtag-button:hover {
+  background-color: #e1f5fe;
+  transform: translateY(-2px);
+}
+
+.popularity-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background-color: #0077b5;
+}
+
+.no-hashtags {
+  color: #666;
+  font-style: italic;
+  text-align: center;
+  padding: 20px 0;
+}
+
+.loading-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100px;
+}
+
+.spinner-small {
+  width: 24px;
+  height: 24px;
+  border: 3px solid rgba(0, 119, 181, 0.1);
+  border-radius: 50%;
+  border-top-color: #0077b5;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.hashtag-tip {
+  display: flex;
+  align-items: center;
+  font-size: 0.85rem;
+  color: #777;
+  margin-top: 10px;
+}
+
+.hashtag-tip i {
+  color: #ffb300;
+  margin-right: 8px;
+}
+
+/* Responsive styling */
+@media (max-width: 576px) {
+  .categories-list {
+    max-height: 120px;
+  }
+  
+  .hashtag-button {
+    font-size: 0.85rem;
+    padding: 6px 10px;
+  }
+}
