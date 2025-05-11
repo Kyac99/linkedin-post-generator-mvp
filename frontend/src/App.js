@@ -4,6 +4,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Dashboard from './pages/Dashboard';
 import Login from './pages/Login';
 import Settings from './pages/Settings';
+import History from './pages/History';
 import Navbar from './components/Navbar';
 import './App.css';
 
@@ -51,6 +52,10 @@ const App = () => {
           <Route 
             path="/settings" 
             element={isAuthenticated ? <Settings /> : <Navigate to="/login" />} 
+          />
+          <Route 
+            path="/history" 
+            element={isAuthenticated ? <History /> : <Navigate to="/login" />} 
           />
         </Routes>
       </div>
