@@ -1,12 +1,11 @@
 // backend/services/AIService.js
 const axios = require('axios');
-const { JSDOM } = require('jsdom');
 require('dotenv').config();
 
 class AIService {
-  constructor(apiType = null) {
-    // Utiliser le type d'API spécifié ou la valeur par défaut de .env
-    this.apiType = apiType || process.env.DEFAULT_AI_PROVIDER || 'claude';
+  constructor() {
+    // Déterminer le type d'API à utiliser (défini dans .env)
+    this.apiType = process.env.DEFAULT_AI_PROVIDER || 'claude';
     
     // Obtenir la clé API à partir des variables d'environnement
     if (this.apiType === 'claude') {
@@ -44,6 +43,9 @@ class AIService {
    * @param {string} tone - Ton souhaité pour le post (professionnel, casual, inspirant, etc.)
    */
   async generatePostFromArticle(article, inputType, tone = 'professionnel') {
+    // Vérifier que la clé API est configurée
+    this._checkApiKey();
+    
     let articleContent = article;
     
     // Si c'est une URL, extraire le contenu de l'article
@@ -71,6 +73,9 @@ class AIService {
    * @param {string} tone - Ton souhaité pour le post
    */
   async generatePostFromIdea(idea, tone = 'professionnel') {
+    // Vérifier que la clé API est configurée
+    this._checkApiKey();
+    
     const prompt = this.createPromptForIdea(idea, tone);
     return await this.callAIApi(prompt);
   }
@@ -82,6 +87,9 @@ class AIService {
    * @param {string} tone - Ton souhaité pour le post
    */
   async generatePostFromYouTube(videoUrl, transcription = null, tone = 'professionnel') {
+    // Vérifier que la clé API est configurée
+    this._checkApiKey();
+    
     let videoContent = '';
     
     if (transcription) {
@@ -114,9 +122,74 @@ class AIService {
    * @param {string} tone - Ton souhaité pour le post
    */
   async generatePostFromPythonCode(pythonCode, tone = 'professionnel') {
+    // Vérifier que la clé API est configurée
+    this._checkApiKey();
+    
     const prompt = this.createPromptForPythonCode(pythonCode, tone);
     return await this.callAIApi(prompt);
   }
+
+  /**
+   * Vérifie que la clé API est configurée
+   * @private
+   */
+  _checkApiKey() {
+    if (!this.apiKey) {
+      throw new Error(`Clé API ${this.apiType} non configurée. Veuillez contacter l'administrateur.`);
+    }
+  }
+
+  /**
+   * Vérifie la validité des clés API configurées dans le fichier .env
+   */
+  async verifyApiKeys() {
+    const results = {
+      claude: {
+        configured: !!process.env.CLAUDE_API_KEY,
+        valid: false,
+        error: null
+      },
+      openai: {
+        configured: !!process.env.OPENAI_API_KEY,
+        valid: false,
+        error: null
+      }
+    };
+    
+    // Vérifier la clé Claude si configurée
+    if (results.claude.configured) {
+      try {
+        const claudeService = new AIService();
+        claudeService.apiType = 'claude';
+        claudeService.apiKey = process.env.CLAUDE_API_KEY;
+        
+        const response = await claudeService.callClaudeApi('Réponds simplement "OK" pour vérifier que l\'API fonctionne.');
+        results.claude.valid = !!response;
+      } catch (error) {
+        results.claude.error = error.message;
+      }
+    }
+    
+    // Vérifier la clé OpenAI si configurée
+    if (results.openai.configured) {
+      try {
+        const openaiService = new AIService();
+        openaiService.apiType = 'openai';
+        openaiService.apiKey = process.env.OPENAI_API_KEY;
+        
+        const response = await openaiService.callOpenAIApi('Réponds simplement "OK" pour vérifier que l\'API fonctionne.');
+        results.openai.valid = !!response;
+      } catch (error) {
+        results.openai.error = error.message;
+      }
+    }
+    
+    return results;
+  }
+
+  // Le reste des méthodes de la classe (extractContentFromUrl, extractYouTubeId, etc.) reste inchangé
+  
+  // ...
 
   /**
    * Extrait le contenu d'une URL
@@ -161,7 +234,7 @@ class AIService {
    * @param {string} url - L'URL YouTube
    */
   extractYouTubeId(url) {
-    const regExp = /^.*((youtu.be\/)|(v\/)|(\/?u\/\w\/)|(embed\/)|(watch\?))??v?=?([^#&?]*).*/;
+    const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))??v?=?([^#&?]*).*/;
     const match = url.match(regExp);
     return (match && match[7].length === 11) ? match[7] : null;
   }
@@ -338,7 +411,7 @@ class AIService {
    */
   async callAIApi(prompt) {
     if (!this.apiKey) {
-      throw new Error('Clé API IA manquante. Veuillez configurer la clé API dans le fichier .env');
+      throw new Error(`Clé API ${this.apiType} non configurée. Veuillez contacter l'administrateur.`);
     }
     
     if (this.apiType === 'claude') {
@@ -446,7 +519,7 @@ class AIService {
         
         // Erreur d'authentification
         if (error.response.status === 401) {
-          throw new Error('Clé API Claude invalide ou expirée. Veuillez vérifier votre clé API dans le fichier .env');
+          throw new Error('Clé API Claude invalide ou expirée. Veuillez contacter l\'administrateur.');
         }
         
         // Erreur de quota
@@ -581,7 +654,7 @@ class AIService {
         
         // Erreur d'authentification
         if (error.response?.status === 401) {
-          throw new Error('Clé API OpenAI invalide ou expirée. Veuillez vérifier votre clé API dans le fichier .env');
+          throw new Error('Clé API OpenAI invalide ou expirée. Veuillez contacter l\'administrateur.');
         }
         
         // Message d'erreur spécifique si disponible
@@ -595,48 +668,6 @@ class AIService {
     }
     
     throw new Error('Nombre maximum de tentatives atteint lors de l\'appel à l\'API OpenAI');
-  }
-
-  /**
-   * Vérifie la validité des clés API configurées dans le fichier .env
-   */
-  async verifyApiKeys() {
-    const results = {
-      claude: {
-        configured: !!process.env.CLAUDE_API_KEY,
-        valid: false,
-        error: null
-      },
-      openai: {
-        configured: !!process.env.OPENAI_API_KEY,
-        valid: false,
-        error: null
-      }
-    };
-    
-    // Vérifier la clé Claude si configurée
-    if (results.claude.configured) {
-      try {
-        const claudeService = new AIService('claude');
-        const response = await claudeService.callClaudeApi('Réponds simplement "OK" pour vérifier que l\'API fonctionne.');
-        results.claude.valid = !!response;
-      } catch (error) {
-        results.claude.error = error.message;
-      }
-    }
-    
-    // Vérifier la clé OpenAI si configurée
-    if (results.openai.configured) {
-      try {
-        const openaiService = new AIService('openai');
-        const response = await openaiService.callOpenAIApi('Réponds simplement "OK" pour vérifier que l\'API fonctionne.');
-        results.openai.valid = !!response;
-      } catch (error) {
-        results.openai.error = error.message;
-      }
-    }
-    
-    return results;
   }
 }
 
