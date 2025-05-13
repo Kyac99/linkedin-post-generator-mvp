@@ -6,8 +6,8 @@ Ce projet est un MVP (Minimum Viable Product) permettant de générer et publier
 
 - **Authentification**
   - Connexion à LinkedIn via OAuth
-  - Configuration de l'API Claude/OpenAI
-  - Stockage sécurisé des tokens et clés API
+  - Configuration des API Claude/OpenAI côté serveur uniquement
+  - Stockage sécurisé des tokens
 
 - **Génération de posts LinkedIn à partir de**
   - Articles (texte ou URL)
@@ -37,11 +37,12 @@ Ce projet est un MVP (Minimum Viable Product) permettant de générer et publier
   - Node.js avec Express pour l'API
   - Intégration avec LinkedIn API
   - Intégration avec Claude AI / OpenAI
-  - Support multi-modèle (Claude 3.5 Sonnet et GPT-4o)
+  - Support multi-modèle (Claude 3 Sonnet/Haiku et GPT-4/3.5 Turbo)
+  - Gestion des clés API exclusivement dans le backend
 
 - **Sécurité**
   - Authentification OAuth pour LinkedIn
-  - Stockage sécurisé des clés API
+  - Stockage sécurisé des clés API dans les variables d'environnement du serveur
   - Vérification des tokens
 
 ## Configuration et déploiement
@@ -54,17 +55,21 @@ Ce projet est un MVP (Minimum Viable Product) permettant de générer et publier
 
 ### Variables d'environnement
 
-Le fichier `.env` dans le dossier `backend` doit être configuré avec:
+1. Créez un fichier `.env` dans le dossier `backend` en vous basant sur le fichier `.env.example`
 
 ```
 PORT=5000
 NODE_ENV=development
+
+# Configuration LinkedIn API
 LINKEDIN_CLIENT_ID=votre_client_id_linkedin
 LINKEDIN_CLIENT_SECRET=votre_client_secret_linkedin
 LINKEDIN_REDIRECT_URI=http://localhost:3000/login
+
+# Configuration des API IA (au moins une des deux est requise)
+DEFAULT_AI_PROVIDER=claude  # ou 'openai'
 CLAUDE_API_KEY=votre_cle_api_claude
 OPENAI_API_KEY=votre_cle_api_openai
-DEFAULT_AI_PROVIDER=claude  # ou 'openai'
 ```
 
 ### Installation
@@ -91,8 +96,8 @@ DEFAULT_AI_PROVIDER=claude  # ou 'openai'
 ## Guide d'utilisation
 
 1. **Configuration initiale**
+   - Configurez les clés API (Claude ou OpenAI) dans le fichier `.env` du backend
    - Connectez-vous avec votre compte LinkedIn
-   - Configurez votre clé API (Claude ou OpenAI)
 
 2. **Génération de posts**
    - Choisissez le type de contenu source (Article, Idée, YouTube, Python)
@@ -103,6 +108,13 @@ DEFAULT_AI_PROVIDER=claude  # ou 'openai'
    - Modifiez le post généré si nécessaire
    - Ajoutez éventuellement un lien avec titre et description
    - Publiez directement sur votre profil LinkedIn
+
+## Modifications récentes
+
+### Mai 2025
+- Refactorisation du middleware `initializeAIService` pour gérer les clés API exclusivement côté serveur
+- Ajout du fichier `.env.example` comme référence pour la configuration
+- Mise à jour de l'interface utilisateur pour refléter la nouvelle gestion des clés API
 
 ## Améliorations futures (post-MVP)
 
