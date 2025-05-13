@@ -187,7 +187,8 @@ const Settings = () => {
         
         <div className="api-status-info">
           <p>
-            Les clés API sont configurées directement sur le serveur par l'administrateur. 
+            Les clés API sont gérées exclusivement sur le serveur par l'administrateur via le fichier <code>.env</code>. 
+            Les clés API ne sont plus requises depuis le frontend pour des raisons de sécurité.
             Si vous rencontrez des problèmes avec la génération de contenu, veuillez contacter l'administrateur.
           </p>
         </div>
