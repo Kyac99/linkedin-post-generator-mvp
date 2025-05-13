@@ -7,6 +7,8 @@ const AIService = require('../services/AIService');
 const initializeAIService = (req, res, next) => {
   try {
     // Obtenir le type d'API préféré depuis la requête (optionnel)
+    // Note: On utilise toujours les clés du backend, mais on permet au frontend
+    // de spécifier quel service (Claude/OpenAI) utiliser si les deux sont configurés
     const preferredApiType = req.query.apiType || req.body.apiType;
     
     // Créer le service AI avec le type spécifié ou la valeur par défaut de .env
